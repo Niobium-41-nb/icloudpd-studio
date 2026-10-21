@@ -1,5 +1,8 @@
 # iCloudPD Studio
 
+[![CI](https://github.com/Niobium-41-nb/icloudpd-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Niobium-41-nb/icloudpd-studio/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
 > A local, dependency-light desktop GUI for [icloudpd](https://github.com/icloud-photos-downloader/icloud_photos_downloader): native WebView2 window, two-factor login, live logs, local gallery, and any-drive folder picker.
 
 一个为 [icloudpd](https://github.com/icloud-photos-downloader/icloud_photos_downloader) 打造的本机桌面应用。把 iCloud 照片与视频以原始画质增量备份到本地，同时提供实时任务日志、双重认证输入、图库浏览与磁盘统计。
