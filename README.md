@@ -7,6 +7,8 @@
 
 一个为 [icloudpd](https://github.com/icloud-photos-downloader/icloud_photos_downloader) 打造的本机桌面应用。把 iCloud 照片与视频以原始画质增量备份到本地，同时提供实时任务日志、双重认证输入、图库浏览与磁盘统计。
 
+> 非官方项目，与 Apple 及 icloudpd 上游项目无隶属关系。iCloud 是 Apple Inc. 的商标。
+
 桌面版使用原生 WebView2 窗口；也可以继续用浏览器模式运行。界面只在本机运行，不经过任何第三方服务器。
 
 ---
