@@ -1,0 +1,22 @@
+# Runtime data: config, job logs, thumbnails, WebView cache
+data/
+
+# Machine-specific Windows shortcut (target path contains local Python)
+*.lnk
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs and local screenshots
+*.log
+*.png
+!static/favicon.svg

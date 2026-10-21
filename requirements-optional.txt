@@ -1,0 +1,4 @@
+# Optional image preview helpers. The UI works without them, but HEIC and
+# video thumbnails need these (ffmpeg is a separate system dependency).
+Pillow>=10.0
+pillow-heif>=0.16

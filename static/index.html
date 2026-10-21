@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="iCloudPD Studio — 把 iCloud 照片与视频增量备份到本地的图形界面。">
+  <title>iCloudPD Studio · 本地影像归档</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <svg class="svg-sprite" aria-hidden="true">
+    <symbol id="i-aperture" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.2"/><path d="M12 2.8 8.2 9.3M21.1 7.6h-7.6M18.2 19.9l-3.1-6.9M8.6 21.1l3.2-6.9M2.9 16.4h7.6M5.8 4.1l3.1 6.9"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3.5 10.5 8.5-7 8.5 7"/><path d="M5.5 9.2V20h13V9.2"/><path d="M9.7 20v-5.6h4.6V20"/></symbol>
+    <symbol id="i-cloud-dl" viewBox="0 0 24 24"><path d="M7.2 18.5a4.7 4.7 0 0 1-.8-9.3 6.1 6.1 0 0 1 11.7 1.2 3.9 3.9 0 0 1 .4 7.8"/><path d="M12 11.5V20m0 0-3.2-3.3M12 20l3.2-3.3"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4.5 17 4.9-4.7 4.1 3.8 2.4-2.2 3.6 3.2"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1a1.7 1.7 0 0 0 1.9.3A1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M4 12h15m0 0-5.5-5.5M19 12l-5.5 5.5"/></symbol>
+    <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 17 17 7M8 7h9v9"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m4.5 12.5 5 5 10-11"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 12.4 2.7 2.7 5.5-6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11.5a8 8 0 1 0-.5 3.5"/><path d="M20 4.5V11h-6.5"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 14.4A8.7 8.7 0 0 1 9.6 3.5 8.7 8.7 0 1 0 20.5 14.4Z"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h4l2 2h7A2.5 2.5 0 0 1 21 9.5v7A2.5 2.5 0 0 1 18.5 19h-13A2.5 2.5 0 0 1 3 16.5Z"/></symbol>
+    <symbol id="i-drive" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="6" rx="2"/><rect x="3" y="13" width="18" height="6" rx="2"/><path d="M7 8h.01M7 16h.01M11 8h5M11 16h5"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="8.5" cy="9.5" r="4.5"/><path d="m12 13 8 8m-3-3 2-2m-5-1 2-2"/></symbol>
+    <symbol id="i-apple" viewBox="0 0 24 24"><path d="M16.7 12.8c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.6.9-.8 0-1.9-.9-3.1-.9-1.6 0-3.1 1-3.9 2.4-1.7 2.9-.4 7.2 1.2 9.5.8 1.2 1.7 2.5 2.9 2.4 1.2 0 1.7-.8 3.1-.8 1.4 0 1.9.8 3.2.8 1.3 0 2.1-1.2 2.9-2.4.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.6-1-2.6-3.6Z"/><path d="M14.3 5.6c.7-.8 1.1-1.9 1-3-.9 0-2 .6-2.7 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2-.5 2.7-1.3Z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.3v13.4L19 12 8 5.3Z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m5 5 14 14M19 5 5 19"/></symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24"><path d="m15 5-7 7 7 7"/></symbol>
+    <symbol id="i-chevron-right" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m5 9 7 7 7-7"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v4.5A1.5 1.5 0 0 1 16.5 20h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="m7 9 3 3-3 3M12.5 15H17"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.5l3.5 2"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 5 6v5.4c0 4.6 3 7.7 7 9.6 4-1.9 7-5 7-9.6V6l-7-3Z"/><path d="m9 12 2 2 4-4.5"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3.5c.6 4.8 3.7 8 8.5 8.5-4.8.6-8 3.7-8.5 8.5-.6-4.8-3.7-8-8.5-8.5 4.8-.5 8-3.7 8.5-8.5Z"/></symbol>
+    <symbol id="i-hdd" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="3"/><path d="M7 12h.01M11 12h6"/></symbol>
+    <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3.5 9.2a13 13 0 0 1 17 0M6.5 12.7a8.5 8.5 0 0 1 11 0M9.5 16.1a4 4 0 0 1 5 0"/><circle cx="12" cy="19.3" r=".9" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-login" viewBox="0 0 24 24"><path d="M14 4h4.5A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5H14"/><path d="M10 8l4 4-4 4M14 12H3"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 6.5 12 6.5 21.5 12 21.5 12 18 17.5 12 17.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3.5 21 20H3L12 3.5Z"/><path d="M12 9v5M12 17.2h.01"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6.5 7l1 13h9l1-13M10 11v5M14 11v5"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7 4v16M17 4v16M3 9h4M17 9h4M3 15h4M17 15h4"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="m4.5 17 4.9-4.7 4.1 3.8 2.4-2.2 3.6 3.2"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="10" rx="2.5"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/><path d="M12 14v2.5"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+    <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M4 11a8 8 0 1 1 .6 3.5"/><path d="M4 4.5V11h6.5"/></symbol>
+    <symbol id="i-x-circle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/></symbol>
+    <symbol id="i-command" viewBox="0 0 24 24"><path d="M9 6.5A2.5 2.5 0 1 0 6.5 9H9V6.5Zm0 0V9h6m0 0V6.5A2.5 2.5 0 1 1 17.5 9H15Zm0 0v6m0 0h2.5A2.5 2.5 0 1 1 15 17.5V15Zm0 0H9m0 0v2.5A2.5 2.5 0 1 1 6.5 15H9v-6Z"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M7 3v4M17 3v4M3.5 10h17"/></symbol>
+    <symbol id="i-album" viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v13a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 18.5Z"/><path d="m4 15 4.5-4.2 4 3.6 2.7-2.4L20 16"/><circle cx="15.5" cy="8.5" r="1.3"/></symbol>
+  </svg>
+
+  <div class="app-shell">
+    <div class="sidebar-scrim" id="sidebarScrim"></div>
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark"><svg><use href="#i-aperture"/></svg></div>
+        <div class="brand-copy">
+          <strong>iCloudPD</strong>
+          <span>LOCAL ARCHIVE STUDIO</span>
+        </div>
+      </div>
+
+      <div class="sidebar-scroll">
+        <div class="nav-group">
+          <div class="nav-label">工作台</div>
+          <a class="nav-link" href="#/dashboard" data-route="dashboard">
+            <svg><use href="#i-home"/></svg><span>概览</span><kbd>1</kbd>
+          </a>
+          <a class="nav-link" href="#/download" data-route="download">
+            <svg><use href="#i-cloud-dl"/></svg><span>同步下载</span><kbd>2</kbd>
+          </a>
+          <a class="nav-link" href="#/jobs" data-route="jobs">
+            <svg><use href="#i-list"/></svg><span>任务记录</span><b class="nav-count" id="navJobCount" hidden></b><kbd>3</kbd>
+          </a>
+          <a class="nav-link" href="#/gallery" data-route="gallery">
+            <svg><use href="#i-image"/></svg><span>照片图库</span><kbd>4</kbd>
+          </a>
+        </div>
+        <div class="nav-group">
+          <div class="nav-label">系统</div>
+          <a class="nav-link" href="#/settings" data-route="settings">
+            <svg><use href="#i-settings"/></svg><span>设置</span><kbd>5</kbd>
+          </a>
+        </div>
+
+        <div class="sidebar-note">
+          <div class="note-icon"><svg><use href="#i-shield"/></svg></div>
+          <div>
+            <strong>只在本机运行</strong>
+            <p>服务仅监听 127.0.0.1。密码不会写入磁盘或日志。</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-foot">
+        <button class="account-mini" id="sideAccount" type="button">
+          <span class="account-avatar" id="sideAvatar"><svg><use href="#i-apple"/></svg></span>
+          <span class="account-mini-copy">
+            <strong id="sideAccountName">尚未登录</strong>
+            <small id="sideAccountMeta">点击建立 iCloud 会话</small>
+          </span>
+          <svg class="account-mini-arrow"><use href="#i-chevron-right"/></svg>
+        </button>
+        <div class="engine-mini">
+          <span class="engine-dot" id="engineDot"></span>
+          <span id="engineMiniText">正在检测 icloudpd…</span>
+          <span class="engine-version" id="engineMiniVersion"></span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="icon-button menu-button" id="menuBtn" type="button" aria-label="打开菜单"><svg><use href="#i-menu"/></svg></button>
+          <div class="breadcrumb">
+            <span id="crumbRoot">工作台</span>
+            <span class="crumb-sep">/</span>
+            <strong id="crumbPage">概览</strong>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <button class="status-chip" id="sessionChip" type="button">
+            <span class="status-dot"></span><span id="sessionChipText">检查会话</span>
+          </button>
+          <button class="icon-button" id="refreshBtn" type="button" title="刷新数据"><svg><use href="#i-refresh"/></svg></button>
+          <button class="icon-button" id="themeBtn" type="button" title="切换深浅色"><svg class="theme-icon-light"><use href="#i-moon"/></svg><svg class="theme-icon-dark"><use href="#i-sun"/></svg></button>
+        </div>
+      </header>
+
+      <div class="page-scroll" id="pageScroll">
+
+        <!-- ============================== 概览 ============================== -->
+        <section class="view" id="view-dashboard" data-view="dashboard">
+          <div class="hero">
+            <div class="hero-copy">
+              <div class="eyebrow"><span class="eyebrow-line"></span> ICLOUD → LOCAL ARCHIVE</div>
+              <h1>把回忆，<br><em>留在本地。</em></h1>
+              <p class="hero-lead">用 icloudpd 把 iCloud 里的照片与视频，按原始画质增量备份到你的硬盘。没有云端中转，没有二次压缩，只有一份真正属于你的底片。</p>
+              <div class="hero-actions">
+                <a class="button primary" href="#/download">
+                  开始同步
+                  <svg><use href="#i-arrow-right"/></svg>
+                </a>
+                <button class="button ghost" id="heroPreviewBtn" type="button">
+                  <svg><use href="#i-eye"/></svg>
+                  仅预览清单
+                </button>
+              </div>
+              <div class="hero-meta">
+                <span><svg><use href="#i-check"/></svg> 增量同步</span>
+                <span><svg><use href="#i-check"/></svg> 原始画质</span>
+                <span><svg><use href="#i-check"/></svg> 断点续传</span>
+              </div>
+            </div>
+
+            <div class="hero-visual" aria-hidden="true">
+              <div class="archive-card">
+                <div class="archive-card-head">
+                  <span>LOCAL ARCHIVE</span>
+                  <span class="archive-live"><i></i> 本机</span>
+                </div>
+                <div class="filmstrip">
+                  <figure class="frame frame-back">
+                    <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice">
+                      <defs><linearGradient id="skyA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e7b47a"/><stop offset="1" stop-color="#5d7b76"/></linearGradient></defs>
+                      <rect width="300" height="400" fill="url(#skyA)"/>
+                      <circle cx="205" cy="108" r="34" fill="#f8e5bf" opacity=".9"/>
+                      <path d="M0 268 74 196l54 50 45-63 127 115v102H0Z" fill="#314a45"/>
+                      <path d="M0 304 95 247l59 43 55-48 91 67v91H0Z" fill="#1d302d"/>
+                      <path d="M0 343c62-16 111 6 163 1s90-20 137-7v63H0Z" fill="#101d1b"/>
+                    </svg>
+                    <figcaption>2024 · 山野</figcaption>
+                  </figure>
+                  <figure class="frame frame-mid">
+                    <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice">
+                      <defs><linearGradient id="skyB" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5d9b0"/><stop offset=".55" stop-color="#d58d68"/><stop offset="1" stop-color="#614b55"/></linearGradient></defs>
+                      <rect width="300" height="400" fill="url(#skyB)"/>
+                      <circle cx="97" cy="122" r="46" fill="#fff0cf" opacity=".85"/>
+                      <path d="M0 254c45-24 76-20 108 1 39 25 67 20 98-8 31-27 61-25 94-3v156H0Z" fill="#7b5a5b" opacity=".55"/>
+                      <path d="M0 300c56-35 105-28 149-2 40 24 93 22 151-10v112H0Z" fill="#332b35"/>
+                      <path d="M0 350c66-10 124-4 174 3s87 4 126-4v51H0Z" fill="#17151b"/>
+                    </svg>
+                    <figcaption>2023 · 黄昏</figcaption>
+                  </figure>
+                  <figure class="frame frame-front">
+                    <svg viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice">
+                      <defs><linearGradient id="skyC" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d5e1dc"/><stop offset=".5" stop-color="#8eaaa2"/><stop offset="1" stop-color="#37524c"/></linearGradient></defs>
+                      <rect width="300" height="400" fill="url(#skyC)"/>
+                      <circle cx="222" cy="88" r="26" fill="#f6f1dd" opacity=".65"/>
+                      <path d="M0 255 67 176l49 45 51-78 83 98 50-40v199H0Z" fill="#55736c" opacity=".7"/>
+                      <path d="M0 286 76 229l48 37 59-56 64 59 53-25v156H0Z" fill="#273f3a"/>
+                      <path d="M0 343c60-15 102 12 161 4 54-8 96-5 139 2v51H0Z" fill="#14231f"/>
+                      <path d="M0 374c65-8 123 6 176 2 47-3 84-2 124 1v23H0Z" fill="#e9e0cc" opacity=".18"/>
+                    </svg>
+                    <figcaption>NOW · 本地</figcaption>
+                    <span class="frame-badge"><svg><use href="#i-check"/></svg></span>
+                  </figure>
+                </div>
+                <div class="archive-card-foot">
+                  <div>
+                    <span class="mini-label">本地归档</span>
+                    <strong id="heroFileCount">—</strong>
+                  </div>
+                  <div>
+                    <span class="mini-label">占用空间</span>
+                    <strong id="heroSize">—</strong>
+                  </div>
+                  <div>
+                    <span class="mini-label">最近写入</span>
+                    <strong id="heroLatest">—</strong>
+                  </div>
+                </div>
+                <div class="archive-grain"></div>
+              </div>
+              <div class="hero-float float-a"><svg><use href="#i-cloud-dl"/></svg><span><b>增量备份</b><small>跳过已存在的文件</small></span></div>
+              <div class="hero-float float-b"><span class="pulse-dot"></span><span><b id="floatStatus">等待开始</b><small>icloudpd 引擎</small></span></div>
+            </div>
+          </div>
+
+          <div class="stat-grid">
+            <article class="stat-card">
+              <div class="stat-top"><span class="stat-icon"><svg><use href="#i-photo"/></svg></span><span class="stat-label">本地归档</span></div>
+              <strong class="stat-value" id="statFiles">—</strong>
+              <span class="stat-sub" id="statFilesSub">正在读取本地目录</span>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span class="stat-icon"><svg><use href="#i-hdd"/></svg></span><span class="stat-label">占用空间</span></div>
+              <strong class="stat-value" id="statSize">—</strong>
+              <span class="stat-sub" id="statSizeSub">—</span>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span class="stat-icon"><svg><use href="#i-clock"/></svg></span><span class="stat-label">最近写入</span></div>
+              <strong class="stat-value stat-value-sm" id="statLast">—</strong>
+              <span class="stat-sub" id="statLastSub">还没有本地文件</span>
+            </article>
+            <article class="stat-card accent">
+              <div class="stat-top"><span class="stat-icon"><svg><use href="#i-spark"/></svg></span><span class="stat-label">下载引擎</span></div>
+              <strong class="stat-value stat-value-sm" id="statEngine">检测中</strong>
+              <span class="stat-sub" id="statEngineSub">正在连接 icloudpd</span>
+            </article>
+          </div>
+
+          <div class="dash-grid">
+            <section class="panel jobs-panel">
+              <div class="panel-head">
+                <div>
+                  <span class="panel-kicker">RECENT RUNS</span>
+                  <h2>最近任务</h2>
+                </div>
+                <a class="text-link" href="#/jobs">全部记录 <svg><use href="#i-arrow-right"/></svg></a>
+              </div>
+              <div class="recent-list" id="dashJobs">
+                <div class="skeleton-row"></div><div class="skeleton-row"></div><div class="skeleton-row"></div>
+              </div>
+            </section>
+
+            <div class="dash-side">
+              <section class="panel storage-panel">
+                <div class="panel-head compact">
+                  <div><span class="panel-kicker">DESTINATION</span><h2>存储位置</h2></div>
+                  <button class="icon-button small" id="openFolderBtn" type="button" title="在资源管理器中打开"><svg><use href="#i-external"/></svg></button>
+                </div>
+                <div class="storage-body">
+                  <div class="disk-ring" id="diskRing"><div><strong id="diskPercent">—</strong><span>已使用</span></div></div>
+                  <div class="storage-copy">
+                    <strong id="diskPath">—</strong>
+                    <span id="diskFree">读取磁盘信息…</span>
+                    <button class="text-link inline" id="changeDirBtn" type="button">更换位置 <svg><use href="#i-arrow-right"/></svg></button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="panel quick-panel">
+                <div class="panel-head compact">
+                  <div><span class="panel-kicker">SHORTCUTS</span><h2>快速开始</h2></div>
+                </div>
+                <div class="quick-list">
+                  <button data-quick="all" type="button"><span class="quick-ico"><svg><use href="#i-cloud-dl"/></svg></span><span><b>同步全部内容</b><small>照片、视频与 Live Photo</small></span><svg class="quick-arrow"><use href="#i-arrow-right"/></svg></button>
+                  <button data-quick="recent" type="button"><span class="quick-ico"><svg><use href="#i-clock"/></svg></span><span><b>只取最近 100 张</b><small>适合日常增量备份</small></span><svg class="quick-arrow"><use href="#i-arrow-right"/></svg></button>
+                  <button data-quick="preview" type="button"><span class="quick-ico"><svg><use href="#i-eye"/></svg></span><span><b>预览待下载</b><small>只列出文件名，不写入磁盘</small></span><svg class="quick-arrow"><use href="#i-arrow-right"/></svg></button>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <div class="note-strip">
+            <div class="note-strip-icon"><svg><use href="#i-info"/></svg></div>
+            <p><strong>关于增量同步：</strong>icloudpd 会根据文件名与大小识别已下载内容，重复运行时自动跳过。首次同步耗时取决于图库大小，可以随时停止并在之后继续。</p>
+            <a href="https://icloud-photos-downloader.github.io/icloud_photos_downloader/" target="_blank" rel="noreferrer">项目文档 <svg><use href="#i-arrow-up-right"/></svg></a>
+          </div>
+        </section>
+
+        <!-- ============================== 同步下载 ============================== -->
+        <section class="view" id="view-download" data-view="download" hidden>
+          <div class="page-head">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> SYNC STUDIO</div>
+              <h1>配置一次同步</h1>
+              <p>选择账户、时间范围与保存位置。所有选项都会直接映射到 icloudpd 命令。</p>
+            </div>
+            <div class="page-head-actions">
+              <a class="button ghost small" href="#/jobs"><svg><use href="#i-list"/></svg> 查看任务</a>
+            </div>
+          </div>
+
+          <div class="workspace-grid">
+            <form class="form-stack" id="downloadForm" autocomplete="off">
+              <section class="form-card">
+                <div class="form-card-head">
+                  <span class="step-no">01</span>
+                  <div><h2>账户与连接</h2><p>iCloud 会话通常有效约两个月，过期后需要重新验证。</p></div>
+                  <span class="session-pill" id="formSessionPill"><i></i> 未检测</span>
+                </div>
+                <div class="field-row">
+                  <label class="field grow">
+                    <span class="field-label">Apple ID</span>
+                    <span class="input-with-icon">
+                      <svg><use href="#i-apple"/></svg>
+                      <input type="text" id="username" name="username" placeholder="name@example.com" spellcheck="false" autocomplete="username">
+                    </span>
+                  </label>
+                  <button class="button ghost field-button" id="loginBtn" type="button"><svg><use href="#i-login"/></svg> 登录 / 重验</button>
+                </div>
+                <div class="field-row split">
+                  <div class="field">
+                    <span class="field-label">iCloud 区域</span>
+                    <div class="segmented" id="domainSeg" role="group" aria-label="iCloud 区域">
+                      <button type="button" data-domain="com" class="active">全球（.com）</button>
+                      <button type="button" data-domain="cn">中国大陆（.cn）</button>
+                    </div>
+                  </div>
+                  <div class="field grow">
+                    <span class="field-label">会话状态</span>
+                    <div class="inline-note" id="accountHint"><svg><use href="#i-info"/></svg><span>选择账户或填写 Apple ID 后，会读取本机已有的 iCloud 会话。</span></div>
+                  </div>
+                </div>
+                <details class="inline-details" id="passwordDetails">
+                  <summary><svg><use href="#i-lock"/></svg> 会话已过期？使用密码启动<span class="summary-hint">密码只保留在内存中</span><svg class="summary-chevron"><use href="#i-chevron-down"/></svg></summary>
+                  <div class="details-body">
+                    <label class="field">
+                      <span class="field-label">iCloud 密码</span>
+                      <span class="input-with-icon">
+                        <svg><use href="#i-key"/></svg>
+                        <input type="password" id="password" name="password" placeholder="留空则使用已保存会话" autocomplete="current-password">
+                        <button class="reveal-btn" type="button" id="revealPassword" title="显示密码"><svg><use href="#i-eye"/></svg></button>
+                      </span>
+                    </label>
+                    <p class="field-help">密码会作为 icloudpd 启动参数传入，仅存在于当前进程。若启用了双重认证，任务开始后会在「任务记录」里提示输入验证码。</p>
+                  </div>
+                </details>
+              </section>
+
+              <section class="form-card">
+                <div class="form-card-head">
+                  <span class="step-no">02</span>
+                  <div><h2>要同步什么</h2><p>可以按时间、数量或相册筛选，先小范围试跑。</p></div>
+                </div>
+                <div class="media-toggles">
+                  <label class="media-toggle"><input type="checkbox" id="mediaPhotos" checked><span class="toggle-visual"><svg><use href="#i-photo"/></svg></span><span><b>照片</b><small>JPEG · HEIC · RAW</small></span><span class="switch"><i></i></span></label>
+                  <label class="media-toggle"><input type="checkbox" id="mediaVideos" checked><span class="toggle-visual"><svg><use href="#i-film"/></svg></span><span><b>视频</b><small>MOV · MP4 · HEVC</small></span><span class="switch"><i></i></span></label>
+                  <label class="media-toggle"><input type="checkbox" id="mediaLive" checked><span class="toggle-visual"><svg><use href="#i-play"/></svg></span><span><b>Live Photo</b><small>照片与动态片段</small></span><span class="switch"><i></i></span></label>
+                </div>
+
+                <div class="field">
+                  <span class="field-label">同步范围</span>
+                  <div class="scope-grid" id="scopeGrid">
+                    <label class="scope-card">
+                      <input type="radio" name="scope" value="all" checked>
+                      <span class="scope-icon"><svg><use href="#i-grid"/></svg></span>
+                      <b>全部内容</b><small>完整备份整个图库</small>
+                      <span class="scope-check"><svg><use href="#i-check"/></svg></span>
+                    </label>
+                    <label class="scope-card">
+                      <input type="radio" name="scope" value="recent">
+                      <span class="scope-icon"><svg><use href="#i-clock"/></svg></span>
+                      <b>最近若干张</b><small>按时间倒序取最新</small>
+                      <span class="scope-check"><svg><use href="#i-check"/></svg></span>
+                    </label>
+                    <label class="scope-card">
+                      <input type="radio" name="scope" value="range">
+                      <span class="scope-icon"><svg><use href="#i-calendar"/></svg></span>
+                      <b>日期范围</b><small>指定起止日期</small>
+                      <span class="scope-check"><svg><use href="#i-check"/></svg></span>
+                    </label>
+                    <label class="scope-card">
+                      <input type="radio" name="scope" value="albums">
+                      <span class="scope-icon"><svg><use href="#i-album"/></svg></span>
+                      <b>指定相册</b><small>只取选中的相册</small>
+                      <span class="scope-check"><svg><use href="#i-check"/></svg></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="scope-panel" id="recentPanel" hidden>
+                  <label class="field">
+                    <span class="field-label">下载最近的</span>
+                    <span class="number-input"><input type="number" id="recentCount" min="1" max="100000" value="100"><span>张 / 个</span></span>
+                  </label>
+                  <p class="field-help">对应 <code>--recent</code>。包含照片与视频，受上方媒体类型开关影响。</p>
+                </div>
+
+                <div class="scope-panel date-panel" id="datePanel" hidden>
+                  <label class="field">
+                    <span class="field-label">开始日期</span>
+                    <input type="date" id="dateFrom">
+                  </label>
+                  <span class="date-dash">—</span>
+                  <label class="field">
+                    <span class="field-label">结束日期</span>
+                    <input type="date" id="dateTo">
+                  </label>
+                  <p class="field-help">留空表示不限。对应 <code>--skip-created-before</code> 与 <code>--skip-created-after</code>。</p>
+                </div>
+
+                <div class="scope-panel" id="albumPanel" hidden>
+                  <div class="album-head">
+                    <div><span class="field-label">选择相册</span><p class="field-help">需要有效的 iCloud 会话才能读取专辑列表。</p></div>
+                    <button class="button ghost small" type="button" id="loadAlbumsBtn"><svg><use href="#i-refresh"/></svg> 读取专辑</button>
+                  </div>
+                  <div class="album-chips" id="albumChips"><span class="muted-small" id="albumHint">点击「读取专辑」获取列表</span></div>
+                </div>
+              </section>
+
+              <section class="form-card">
+                <div class="form-card-head">
+                  <span class="step-no">03</span>
+                  <div><h2>保存到</h2><p>建议选择空间充足的本地磁盘；网络磁盘也可以，但速度取决于连接。</p></div>
+                </div>
+                <label class="field">
+                  <span class="field-label">下载目录</span>
+                  <span class="input-with-icon path-input">
+                    <svg><use href="#i-folder"/></svg>
+                    <input type="text" id="downloadDir" name="downloadDir" placeholder="D:\iCloud Photos" spellcheck="false">
+                    <button class="browse-btn" type="button" id="browseDirBtn">浏览</button>
+                  </span>
+                </label>
+                <div class="path-meta">
+                  <span id="freeSpaceHint"><svg><use href="#i-hdd"/></svg> 读取磁盘空间…</span>
+                  <button type="button" class="text-link inline" id="recentDirsBtn">最近使用 <svg><use href="#i-chevron-down"/></svg></button>
+                </div>
+                <div class="recent-dirs" id="recentDirs" hidden></div>
+
+                <div class="field-row split">
+                  <label class="field">
+                    <span class="field-label">文件夹结构</span>
+                    <select id="folderStructure">
+                      <option value="{:%Y/%m/%d}">年 / 月 / 日（默认）</option>
+                      <option value="{:%Y/%m}">年 / 月</option>
+                      <option value="{:%Y}">年</option>
+                      <option value="none">全部平铺</option>
+                    </select>
+                  </label>
+                  <label class="field">
+                    <span class="field-label">图片尺寸</span>
+                    <select id="sizeSelect">
+                      <option value="">原始尺寸（推荐）</option>
+                      <option value="medium">中等 · 加 medium 后缀</option>
+                      <option value="thumb">缩略图 · 加 thumb 后缀</option>
+                      <option value="adjusted">Apple 调整版</option>
+                      <option value="alternative">替代版本</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div class="check-grid">
+                  <label class="check-row"><input type="checkbox" id="xmpSidecar"><span class="checkbox"><svg><use href="#i-check"/></svg></span><span><b>导出 XMP 元数据</b><small>保留拍摄与编辑信息</small></span></label>
+                  <label class="check-row"><input type="checkbox" id="setExif"><span class="checkbox"><svg><use href="#i-check"/></svg></span><span><b>补写 EXIF 拍摄时间</b><small>文件缺失 DateTimeOriginal 时</small></span></label>
+                  <label class="check-row"><input type="checkbox" id="keepUnicode" checked><span class="checkbox"><svg><use href="#i-check"/></svg></span><span><b>保留 Unicode 文件名</b><small>避免中文名称被过滤</small></span></label>
+                  <label class="check-row"><input type="checkbox" id="dryRun"><span class="checkbox"><svg><use href="#i-check"/></svg></span><span><b>试运行</b><small>不写入本地或 iCloud</small></span></label>
+                </div>
+              </section>
+
+              <details class="advanced-card" id="advancedCard">
+                <summary>
+                  <span class="advanced-icon"><svg><use href="#i-sliders"/></svg></span>
+                  <span><b>高级选项</b><small>去重策略、增量停止条件、云端删除等</small></span>
+                  <svg class="advanced-chevron"><use href="#i-chevron-down"/></svg>
+                </summary>
+                <div class="advanced-body">
+                  <div class="field-row split">
+                    <label class="field">
+                      <span class="field-label">去重 / 文件命名</span>
+                      <select id="matchPolicy">
+                        <option value="name-size-dedup-with-suffix">名称 + 大小去重（默认）</option>
+                        <option value="name-id7">文件名追加资产 ID</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span class="field-label">找到多少张已下载后停止</span>
+                      <span class="number-input"><input type="number" id="untilFound" min="0" placeholder="不启用"><span>张</span></span>
+                    </label>
+                  </div>
+                  <div class="field-row split">
+                    <label class="field">
+                      <span class="field-label">Live Photo 视频命名</span>
+                      <select id="livePhotoPolicy">
+                        <option value="suffix">追加 _HEVC 后缀</option>
+                        <option value="original">沿用原文件名</option>
+                      </select>
+                    </label>
+                    <label class="field">
+                      <span class="field-label">RAW + JPEG 对齐</span>
+                      <select id="alignRaw">
+                        <option value="as-is">保持原样</option>
+                        <option value="original">优先 RAW</option>
+                        <option value="alternative">优先 JPEG</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div class="danger-zone">
+                    <div class="danger-head"><svg><use href="#i-alert"/></svg><div><b>会修改 iCloud 或本地文件</b><small>以下选项默认关闭。开启后请确认目标账户与目录。</small></div></div>
+                    <div class="danger-options">
+                      <label class="check-row danger"><input type="checkbox" id="deleteAfter"><span class="checkbox"><svg><use href="#i-check"/></svg></span><span><b>下载后从 iCloud 删除</b><small>会进入「最近删除」，可恢复</small></span></label>
+                      <label class="check-row danger"><input type="checkbox" id="autoDelete"><span class="checkbox"><svg><use href="#i-check"/></svg></span><span><b>清理 iCloud「最近删除」</b><small>不可与上一项同时使用</small></span></label>
+                      <label class="check-row danger"><input type="checkbox" id="keepRecentEnable"><span class="checkbox"><svg><use href="#i-check"/></svg></span><span><b>只保留最近 N 天</b><small>删除更早的云端照片</small></span></label>
+                    </div>
+                    <label class="field keep-days" id="keepDaysField" hidden>
+                      <span class="field-label">保留天数</span>
+                      <span class="number-input"><input type="number" id="keepDays" min="0" value="30"><span>天</span></span>
+                    </label>
+                  </div>
+                </div>
+              </details>
+            </form>
+
+            <aside class="run-panel">
+              <div class="run-panel-inner">
+                <div class="run-head">
+                  <span class="panel-kicker">RUN SUMMARY</span>
+                  <h2>运行摘要</h2>
+                  <span class="run-ready" id="runReady"><i></i> 准备就绪</span>
+                </div>
+                <div class="summary-list">
+                  <div><span>账户</span><strong id="sumAccount">未填写</strong></div>
+                  <div><span>范围</span><strong id="sumScope">全部内容</strong></div>
+                  <div><span>媒体</span><strong id="sumMedia">照片 · 视频 · Live</strong></div>
+                  <div><span>保存到</span><strong class="truncate" id="sumTarget">未选择目录</strong></div>
+                  <div><span>模式</span><strong id="sumMode">正式同步</strong></div>
+                </div>
+                <div class="command-box">
+                  <div class="command-head"><span><svg><use href="#i-terminal"/></svg> 命令预览</span><button type="button" id="copyCommandBtn" title="复制命令"><svg><use href="#i-copy"/></svg></button></div>
+                  <code id="commandPreview">icloudpd --help</code>
+                </div>
+                <label class="preview-switch">
+                  <input type="checkbox" id="previewMode">
+                  <span class="switch"><i></i></span>
+                  <span><b>仅预览待下载清单</b><small>不写入任何文件</small></span>
+                </label>
+                <div class="run-warning" id="runWarning" hidden><svg><use href="#i-alert"/></svg><span></span></div>
+                <button class="button primary run-button" type="submit" form="downloadForm" id="startBtn">
+                  <span>开始同步</span><svg><use href="#i-arrow-right"/></svg>
+                </button>
+                <p class="run-footnote"><svg><use href="#i-lock"/></svg> 密码仅用于本次任务，不会写入配置。首次使用会提示双重认证验证码。</p>
+                <div class="run-tips">
+                  <div><span>01</span><p>首次建议先「仅预览」，确认筛选范围。</p></div>
+                  <div><span>02</span><p>同步过程中可以关闭页面，任务仍在后台运行。</p></div>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <!-- ============================== 任务 ============================== -->
+        <section class="view" id="view-jobs" data-view="jobs" hidden>
+          <div class="page-head">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> RUN HISTORY</div>
+              <h1>任务记录</h1>
+              <p>实时查看 icloudpd 的输出，处理双重认证，或停止正在运行的任务。</p>
+            </div>
+            <div class="page-head-actions">
+              <button class="button ghost small" id="jobClearBtn" type="button"><svg><use href="#i-trash"/></svg> 清理已结束</button>
+              <a class="button primary small" href="#/download"><svg><use href="#i-plus"/></svg> 新建任务</a>
+            </div>
+          </div>
+
+          <div class="jobs-layout">
+            <div class="job-list-panel">
+              <div class="list-panel-head">
+                <span>全部任务</span>
+                <span class="count-badge" id="jobCount">0</span>
+              </div>
+              <div class="job-list" id="jobList">
+                <div class="empty-mini"><span class="spinner"></span> 正在读取任务…</div>
+              </div>
+            </div>
+
+            <div class="job-detail-panel" id="jobDetailPanel">
+              <div class="job-empty" id="jobDetailEmpty">
+                <div class="empty-art"><svg><use href="#i-terminal"/></svg></div>
+                <h2>选择一个任务</h2>
+                <p>任务输出、下载进度与双重认证提示会显示在这里。</p>
+                <a class="button ghost small" href="#/download">开始第一次同步</a>
+              </div>
+
+              <div class="job-detail" id="jobDetailContent" hidden>
+                <div class="job-detail-head">
+                  <div class="job-title-wrap">
+                    <span class="job-kind-icon" id="jobKindIcon"><svg><use href="#i-cloud-dl"/></svg></span>
+                    <div>
+                      <div class="job-title-line"><h2 id="jobTitle">任务</h2><span class="status-badge" id="jobStatus"><i></i> 运行中</span></div>
+                      <p id="jobSub">—</p>
+                    </div>
+                  </div>
+                  <div class="job-actions">
+                    <button class="button ghost small" id="jobManualInput" type="button" title="当 icloudpd 等待密码或验证码时手动提交"><svg><use href="#i-key"/></svg> 输入</button>
+                    <button class="button danger small" id="jobStopBtn" type="button"><svg><use href="#i-stop"/></svg> 停止</button>
+                    <button class="icon-button small" id="jobRefreshBtn" type="button" title="刷新"><svg><use href="#i-refresh"/></svg></button>
+                  </div>
+                </div>
+
+                <div class="job-progress-card">
+                  <div class="progress-top">
+                    <span id="jobProgressText">正在启动…</span>
+                    <strong id="jobPercent">—</strong>
+                  </div>
+                  <div class="progress-track"><div class="progress-fill" id="jobProgressBar"></div></div>
+                  <div class="job-stats">
+                    <div><span>已下载</span><strong id="jobDownloaded">0</strong></div>
+                    <div><span>已跳过</span><strong id="jobSkipped">0</strong></div>
+                    <div><span>错误</span><strong id="jobErrors">0</strong></div>
+                    <div><span>耗时</span><strong id="jobElapsed">—</strong></div>
+                  </div>
+                </div>
+
+                <div class="prompt-card" id="jobPrompt" hidden>
+                  <div class="prompt-icon"><svg><use href="#i-shield"/></svg></div>
+                  <div class="prompt-copy">
+                    <strong>需要双重认证</strong>
+                    <p id="jobPromptText">输入 Apple 设备上显示的验证码。</p>
+                  </div>
+                  <div class="prompt-form">
+                    <input type="text" id="jobPromptInput" inputmode="numeric" autocomplete="one-time-code" placeholder="6 位验证码" maxlength="12">
+                    <button class="button primary small" id="jobPromptSend" type="button">提交验证码</button>
+                  </div>
+                </div>
+
+                <div class="terminal">
+                  <div class="terminal-head">
+                    <div class="terminal-dots"><i></i><i></i><i></i></div>
+                    <span class="terminal-title">icloudpd output</span>
+                    <span class="terminal-live" id="terminalLive"><i></i> LIVE</span>
+                    <label class="auto-scroll"><input type="checkbox" id="autoScroll" checked><span>自动滚动</span></label>
+                  </div>
+                  <div class="terminal-body" id="jobLog"><div class="terminal-placeholder">等待输出…</div></div>
+                  <div class="terminal-foot">
+                    <code id="jobCommand">—</code>
+                    <span id="jobLogMeta">0 行</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============================== 图库 ============================== -->
+        <section class="view" id="view-gallery" data-view="gallery" hidden>
+          <div class="page-head gallery-head">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> CONTACT SHEET</div>
+              <h1>照片图库</h1>
+              <p>浏览已经归档到本地的照片与视频。缩略图在本机生成，不会上传。</p>
+            </div>
+            <div class="page-head-actions">
+              <div class="gallery-stat" id="galleryStats"><strong>—</strong><span>个文件</span></div>
+              <button class="button ghost small" id="galleryRefresh" type="button"><svg><use href="#i-refresh"/></svg> 重新扫描</button>
+            </div>
+          </div>
+
+          <div class="gallery-toolbar">
+            <label class="search-box">
+              <svg><use href="#i-search"/></svg>
+              <input type="search" id="gallerySearch" placeholder="搜索文件名或路径…">
+            </label>
+            <div class="segmented compact" id="galleryFilters" role="group" aria-label="媒体类型">
+              <button type="button" data-kind="all" class="active">全部</button>
+              <button type="button" data-kind="photo">照片</button>
+              <button type="button" data-kind="video">视频</button>
+            </div>
+            <select id="gallerySort" class="sort-select" aria-label="排序">
+              <option value="new">最新优先</option>
+              <option value="old">最早优先</option>
+              <option value="name">按文件名</option>
+              <option value="size">按文件大小</option>
+            </select>
+            <span class="gallery-count" id="galleryCount">—</span>
+          </div>
+
+          <div class="gallery-grid" id="galleryGrid"></div>
+          <div class="gallery-empty" id="galleryEmpty" hidden>
+            <div class="empty-art"><svg><use href="#i-image"/></svg></div>
+            <h2>这里还没有照片</h2>
+            <p>完成一次同步后，本地归档中的照片与视频会出现在这里。</p>
+            <a class="button primary small" href="#/download">去同步照片</a>
+          </div>
+          <div class="gallery-more-wrap"><button class="button ghost" id="galleryMore" type="button" hidden>加载更多</button></div>
+        </section>
+
+        <!-- ============================== 设置 ============================== -->
+        <section class="view" id="view-settings" data-view="settings" hidden>
+          <div class="page-head">
+            <div>
+              <div class="eyebrow"><span class="eyebrow-line"></span> PREFERENCES</div>
+              <h1>设置</h1>
+              <p>路径、账户与引擎信息。所有数据都保存在当前目录的 <code>data</code> 文件夹。</p>
+            </div>
+            <div class="page-head-actions">
+              <button class="button primary small" id="saveSettingsBtn" type="button"><svg><use href="#i-check"/></svg> 保存设置</button>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <section class="panel settings-card">
+              <div class="panel-head compact"><div><span class="panel-kicker">PATHS</span><h2>存储路径</h2></div><span class="settings-icon"><svg><use href="#i-folder"/></svg></span></div>
+              <label class="field">
+                <span class="field-label">默认下载目录</span>
+                <span class="input-with-icon path-input"><svg><use href="#i-folder"/></svg><input type="text" id="setDownloadDir" spellcheck="false"><button class="browse-btn" type="button" id="setBrowseDownload">浏览</button></span>
+              </label>
+              <label class="field">
+                <span class="field-label">iCloud 会话目录（cookie）</span>
+                <span class="input-with-icon"><svg><use href="#i-key"/></svg><input type="text" id="setCookieDir" spellcheck="false"></span>
+              </label>
+              <p class="field-help">更改会话目录不会移动已有文件。默认是 <code>~/.pyicloud</code>。</p>
+            </section>
+
+            <section class="panel settings-card">
+              <div class="panel-head compact"><div><span class="panel-kicker">ACCOUNT</span><h2>账户</h2></div><span class="settings-icon"><svg><use href="#i-apple"/></svg></span></div>
+              <label class="field">
+                <span class="field-label">默认 Apple ID</span>
+                <input type="text" id="setUsername" spellcheck="false" placeholder="name@example.com">
+              </label>
+              <div class="field">
+                <span class="field-label">默认区域</span>
+                <div class="segmented" id="setDomainSeg">
+                  <button type="button" data-domain="com" class="active">全球（.com）</button>
+                  <button type="button" data-domain="cn">中国大陆（.cn）</button>
+                </div>
+              </div>
+              <div class="session-list" id="sessionList"><span class="muted-small">正在读取本机会话…</span></div>
+              <button class="button ghost small" id="settingsLoginBtn" type="button"><svg><use href="#i-login"/></svg> 登录 / 重新验证</button>
+            </section>
+
+            <section class="panel settings-card">
+              <div class="panel-head compact"><div><span class="panel-kicker">ENGINE</span><h2>下载引擎</h2></div><span class="settings-icon"><svg><use href="#i-command"/></svg></span></div>
+              <div class="engine-detail" id="engineDetails">
+                <div class="skeleton-row"></div><div class="skeleton-row"></div>
+              </div>
+              <div class="inline-note"><svg><use href="#i-info"/></svg><span>若引擎不可用，请先安装 icloudpd，并确保它位于 PATH 中。</span></div>
+              <a class="text-link inline" href="https://icloud-photos-downloader.github.io/icloud_photos_downloader/install.html" target="_blank" rel="noreferrer">安装说明 <svg><use href="#i-arrow-up-right"/></svg></a>
+            </section>
+
+            <section class="panel settings-card">
+              <div class="panel-head compact"><div><span class="panel-kicker">APPEARANCE</span><h2>外观</h2></div><span class="settings-icon"><svg><use href="#i-sun"/></svg></span></div>
+              <div class="theme-options" id="themeOptions">
+                <button type="button" data-theme-choice="light"><span class="theme-preview light"><i></i><i></i></span><b>纸张</b><small>暖白 · 浅色</small></button>
+                <button type="button" data-theme-choice="dark"><span class="theme-preview dark"><i></i><i></i></span><b>暗房</b><small>深色 · 低光</small></button>
+                <button type="button" data-theme-choice="system"><span class="theme-preview system"><i></i><i></i></span><b>跟随系统</b><small>自动切换</small></button>
+              </div>
+            </section>
+
+            <section class="panel settings-card">
+              <div class="panel-head compact"><div><span class="panel-kicker">DATA</span><h2>数据与历史</h2></div><span class="settings-icon"><svg><use href="#i-hdd"/></svg></span></div>
+              <div class="data-rows">
+                <div><span>配置目录</span><code id="dataPath">—</code></div>
+                <div><span>任务记录</span><strong id="settingsJobCount">0</strong></div>
+                <div><span>本地媒体</span><strong id="settingsMediaCount">—</strong></div>
+              </div>
+              <div class="settings-actions">
+                <button class="button ghost small" id="clearHistoryBtn" type="button"><svg><use href="#i-trash"/></svg> 清理任务记录</button>
+                <a class="button ghost small" href="#/gallery"><svg><use href="#i-image"/></svg> 打开图库</a>
+              </div>
+            </section>
+
+            <section class="panel settings-card about-card">
+              <div class="about-brand"><div class="brand-mark"><svg><use href="#i-aperture"/></svg></div><div><strong>iCloudPD Studio</strong><span>LOCAL ARCHIVE STUDIO</span></div></div>
+              <p>一个为 icloudpd 打造的本机图形界面。没有账号系统，没有遥测，不经过任何第三方服务器。</p>
+              <div class="about-meta"><span>UI <b id="aboutUiVersion">1.0.0</b></span><span>icloudpd <b id="aboutEngineVersion">—</b></span><span>Python <b id="aboutPython">—</b></span></div>
+            </section>
+          </div>
+        </section>
+
+        <footer class="page-footer">
+          <span>iCloudPD Studio · 本机运行</span>
+          <span>照片留在你的磁盘上。</span>
+        </footer>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============================== 登录弹窗 ============================== -->
+  <dialog class="modal auth-modal" id="authDialog">
+    <form method="dialog" class="modal-card" id="authForm">
+      <div class="modal-head">
+        <div class="modal-icon"><svg><use href="#i-apple"/></svg></div>
+        <div><span class="panel-kicker">ICLOUD SESSION</span><h2>登录 iCloud</h2></div>
+        <button class="icon-button small modal-close" type="button" data-close-dialog="authDialog" aria-label="关闭"><svg><use href="#i-x"/></svg></button>
+      </div>
+      <p class="modal-lead">验证成功后会保存会话，之后的同步通常不需要再次输入密码。若启用了双重认证，验证码会在任务面板中提示输入。</p>
+      <label class="field">
+        <span class="field-label">Apple ID</span>
+        <span class="input-with-icon"><svg><use href="#i-apple"/></svg><input type="text" id="authUsername" placeholder="name@example.com" spellcheck="false" autocomplete="username"></span>
+      </label>
+      <label class="field">
+        <span class="field-label">iCloud 密码</span>
+        <span class="input-with-icon"><svg><use href="#i-key"/></svg><input type="password" id="authPassword" placeholder="输入密码" autocomplete="current-password"><button class="reveal-btn" type="button" id="authReveal" title="显示密码"><svg><use href="#i-eye"/></svg></button></span>
+      </label>
+      <div class="field">
+        <span class="field-label">区域</span>
+        <div class="segmented" id="authDomainSeg">
+          <button type="button" data-domain="com" class="active">全球（.com）</button>
+          <button type="button" data-domain="cn">中国大陆（.cn）</button>
+        </div>
+      </div>
+      <div class="modal-note"><svg><use href="#i-lock"/></svg><span>密码仅用于启动 icloudpd 进程，不会保存到配置文件。若账户启用了高级数据保护（ADP），icloudpd 无法登录。</span></div>
+      <div class="modal-actions">
+        <button class="button ghost" type="button" data-close-dialog="authDialog">取消</button>
+        <button class="button primary" type="submit" id="authSubmit">开始验证 <svg><use href="#i-arrow-right"/></svg></button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- ============================== 文件夹选择 ============================== -->
+  <dialog class="modal folder-modal" id="folderDialog">
+    <div class="modal-card folder-card">
+      <div class="modal-head">
+        <div class="modal-icon"><svg><use href="#i-folder"/></svg></div>
+        <div><span class="panel-kicker">CHOOSE FOLDER</span><h2>选择下载目录</h2></div>
+        <button class="icon-button small modal-close" type="button" data-close-dialog="folderDialog" aria-label="关闭"><svg><use href="#i-x"/></svg></button>
+      </div>
+      <div class="folder-toolbar">
+        <button class="icon-button small" type="button" id="folderUp" title="上一级"><svg><use href="#i-chevron-left"/></svg></button>
+        <div class="folder-path" id="folderPath">此电脑</div>
+        <button class="button ghost small" type="button" id="folderThisPc"><svg><use href="#i-drive"/></svg> 磁盘</button>
+        <button class="button ghost small" type="button" id="folderMkdir"><svg><use href="#i-plus"/></svg> 新建文件夹</button>
+      </div>
+      <div class="folder-shortcuts" id="folderShortcuts"></div>
+      <div class="folder-drives" id="folderDrives"></div>
+      <div class="folder-list" id="folderList"><div class="empty-mini">正在读取…</div></div>
+      <div class="folder-new" id="folderNew" hidden>
+        <input type="text" id="folderNewName" placeholder="新文件夹名称">
+        <button class="button primary small" type="button" id="folderNewConfirm">创建</button>
+        <button class="button ghost small" type="button" id="folderNewCancel">取消</button>
+      </div>
+      <div class="modal-actions folder-actions">
+        <span class="folder-selected" id="folderSelected">未选择</span>
+        <div>
+          <button class="button ghost" type="button" data-close-dialog="folderDialog">取消</button>
+          <button class="button primary" type="button" id="folderChoose">使用此文件夹</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============================== 确认 ============================== -->
+  <dialog class="modal confirm-modal" id="confirmDialog">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="modal-icon warn"><svg><use href="#i-alert"/></svg></div>
+        <div><span class="panel-kicker">PLEASE CONFIRM</span><h2 id="confirmTitle">确认操作</h2></div>
+      </div>
+      <p class="modal-lead" id="confirmText"></p>
+      <div class="modal-actions">
+        <button class="button ghost" type="button" id="confirmCancel">取消</button>
+        <button class="button danger" type="button" id="confirmOk">确认</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============================== 灯箱 ============================== -->
+  <dialog class="lightbox" id="lightboxDialog">
+    <div class="lightbox-shell">
+      <button class="lightbox-close icon-button" type="button" id="lightboxClose" aria-label="关闭"><svg><use href="#i-x"/></svg></button>
+      <button class="lightbox-nav prev" type="button" id="lightboxPrev" aria-label="上一张"><svg><use href="#i-chevron-left"/></svg></button>
+      <div class="lightbox-stage" id="lightboxStage"></div>
+      <button class="lightbox-nav next" type="button" id="lightboxNext" aria-label="下一张"><svg><use href="#i-chevron-right"/></svg></button>
+      <aside class="lightbox-info">
+        <span class="panel-kicker">LOCAL ASSET</span>
+        <h3 id="lightboxName">—</h3>
+        <div class="lightbox-meta" id="lightboxMeta"></div>
+        <div class="lightbox-actions">
+          <button class="button ghost small" id="lightboxReveal" type="button"><svg><use href="#i-external"/></svg> 在文件夹中显示</button>
+          <button class="button ghost small" id="lightboxOpen" type="button"><svg><use href="#i-eye"/></svg> 用默认应用打开</button>
+        </div>
+        <p class="lightbox-note"><svg><use href="#i-shield"/></svg><span>预览从本地文件读取，不会上传到网络。</span></p>
+      </aside>
+    </div>
+  </dialog>
+
+  <div class="toast-root" id="toastRoot" aria-live="polite"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

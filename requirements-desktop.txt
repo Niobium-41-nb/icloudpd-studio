@@ -1,0 +1,2 @@
+# Desktop window shell (native WebView2 on Windows)
+pywebview>=6.0
