@@ -20,3 +20,13 @@ Thumbs.db
 *.log
 *.png
 !static/favicon.svg
+
+# Packaging output
+build/
+build_*/
+dist/
+dist_*/
+*.zip
+
+# Local agent workspace data
+.workbuddy/

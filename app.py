@@ -13,7 +13,6 @@ duration of the icloudpd process and are never written to disk or logs.
 from __future__ import annotations
 
 import argparse
-import codecs
 import hashlib
 import json
 import locale
@@ -50,8 +49,45 @@ except Exception:  # pragma: no cover - optional HEIF support
 
 APP_NAME = "iCloudPD Studio"
 APP_VERSION = "1.0.0"
-APP_DIR = Path(__file__).resolve().parent
-STATIC_DIR = APP_DIR / "static"
+
+
+class _NullStream:
+    """窗口模式下没有控制台，sys.stdout/stderr 可能是 None。
+
+    服务进程平时由桌面壳把输出重定向到日志文件，句柄有效；但只要有人直接
+    双击运行、或者日志文件打不开，print() 就会 AttributeError 并把整个服务
+    带崩。这里兜一层空流，保证「没有控制台」不等于「不能运行」。
+    """
+
+    encoding = "utf-8"
+    errors = "replace"
+
+    def write(self, _text: str) -> int:
+        return 0
+
+    def flush(self) -> None:
+        return None
+
+    def isatty(self) -> bool:
+        return False
+
+    def fileno(self) -> int:
+        raise OSError("no console available")
+
+
+if sys.stdout is None:
+    sys.stdout = _NullStream()  # type: ignore[assignment]
+if sys.stderr is None:
+    sys.stderr = _NullStream()  # type: ignore[assignment]
+
+
+# 开发态：代码与资源都在源码目录。
+# 打包态（PyInstaller）：静态资源被解压到 sys._MEIPASS，而 data/ 必须落在
+# exe 旁边——否则每次启动都写进临时目录，配置与任务记录会随重启丢失。
+FROZEN = bool(getattr(sys, "frozen", False))
+APP_DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
+RESOURCE_DIR = Path(getattr(sys, "_MEIPASS", APP_DIR))
+STATIC_DIR = RESOURCE_DIR / "static"
 DATA_DIR = APP_DIR / "data"
 JOBS_DIR = DATA_DIR / "jobs"
 THUMB_DIR = DATA_DIR / "thumbs"
@@ -249,12 +285,34 @@ def ensure_app_dirs() -> None:
 # ---------------------------------------------------------------------------
 
 
+ICLOUDPD_SELF_FLAG = "--icloudpd-cli"
+
+
+def bundled_engine_path() -> Path | None:
+    """打包版随程序分发的 icloudpd 可执行文件。
+
+    之所以不做成「同一个 exe 自任引擎」：Windows 下 PyInstaller 引导器会把
+    标准句柄重新挂到控制台，子进程的 stdout 就不再走我们建立的管道，实时
+    日志会整段丢失。独立进程没有这个副作用，输出捕获行为与官方发行版一致。
+    """
+    name = "icloudpd.exe" if os.name == "nt" else "icloudpd"
+    for base in (APP_DIR, RESOURCE_DIR):
+        candidate = base / name
+        if candidate.is_file():
+            return candidate
+    return None
+
+
 def engine_argv() -> list[str]:
     override = os.environ.get("ICLOUDPD_BIN", "").strip()
     if override:
         if override.lower().endswith(".py"):
             return [sys.executable, override]
         return [override]
+    if FROZEN:
+        bundled = bundled_engine_path()
+        if bundled is not None:
+            return [str(bundled)]
     found = shutil.which("icloudpd")
     if found:
         return [found]
@@ -268,8 +326,25 @@ def child_env() -> dict:
     return env
 
 
+LOCAL_ENCODING = locale.getpreferredencoding(False) or "utf-8"
+LINE_BREAK_RE = re.compile(rb"[\r\n]")
+
+
 def decode_output(raw: bytes) -> str:
-    for encoding in ("utf-8", locale.getpreferredencoding(False), "gb18030", "latin-1"):
+    """把 icloudpd 的原始输出解码成文本。
+
+    icloudpd 1.x 官方发行的是冻结二进制（PyInstaller 打包），它不会理会
+    PYTHONIOENCODING / PYTHONUTF8，输出到管道时仍使用系统代码页（简体中文
+    Windows 上是 cp936/GBK）。因此这里逐段试探：先 UTF-8，再本地代码页与
+    GB18030，最后才用 UTF-8 + replace 兜底，避免中文路径变成“��”乱码。
+    """
+    if not raw:
+        return ""
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        pass
+    for encoding in (LOCAL_ENCODING, "gb18030", "cp936"):
         try:
             return raw.decode(encoding)
         except (UnicodeDecodeError, LookupError):
@@ -705,43 +780,43 @@ class Job:
         stream = self.proc.stdout if self.proc else None
         if stream is None:
             return
-        decoder = codecs.getincrementaldecoder("utf-8")("replace")
-        buffer = ""
+        # 按字节缓冲、按行解码：多字节的中文路径可能被拆到两个 chunk 里，
+        # 必须在整行上做编码探测，不能逐字节累积后再按 UTF-8 解码。
+        pending = b""
         try:
             while True:
-                raw = stream.read(1)
-                if not raw:
+                chunk = stream.read(4096)
+                if not chunk:
                     break
-                char = decoder.decode(raw)
-                if not char:
-                    continue
-                buffer += char
-                while "\n" in buffer:
-                    line, buffer = buffer.split("\n", 1)
-                    self.add_log(line)
-                if "\r" in buffer:
-                    parts = buffer.split("\r")
-                    buffer = parts[-1]
-                    for part in parts[:-1]:
-                        self.add_log(part)
-                if buffer and len(buffer) < 4000:
-                    candidate = strip_ansi(buffer).strip()
-                    if candidate and PROMPT_RE.search(candidate):
-                        self.add_log(buffer, prompt=True)
-                        buffer = ""
-                if len(buffer) > 8000:
-                    self.add_log(buffer[:8000])
-                    buffer = buffer[8000:]
+                pending += chunk
+                pending = self._drain_lines(pending)
+                if len(pending) > 8000:
+                    self.add_log(decode_output(pending[:8000]))
+                    pending = pending[8000:]
         except Exception as exc:
             self.add_log(f"[ui] 读取输出时出错: {exc}", level="error")
         finally:
-            try:
-                buffer += decoder.decode(b"", final=True)
-            except Exception:
-                pass
-            if buffer.strip():
-                self.add_log(buffer)
+            if pending.strip():
+                self.add_log(decode_output(pending))
             self._finish()
+
+    def _drain_lines(self, pending: bytes) -> bytes:
+        """把已完成的行交给 add_log，返回尚未结束的残段。"""
+        while pending:
+            match = LINE_BREAK_RE.search(pending)
+            if not match:
+                break
+            line = pending[: match.start()]
+            pending = pending[match.end():]
+            if line.strip():
+                self.add_log(decode_output(line))
+        # 没有换行的残段通常是交互式提示（如二次验证码），单独识别
+        if pending and len(pending) < 4000 and pending.isascii():
+            candidate = pending.decode("ascii", "replace").strip()
+            if candidate and PROMPT_RE.search(strip_ansi(candidate)):
+                self.add_log(decode_output(pending), prompt=True)
+                return b""
+        return pending
 
     def _finish(self) -> None:
         with self.lock:

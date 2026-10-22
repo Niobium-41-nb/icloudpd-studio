@@ -22,11 +22,36 @@ import webbrowser
 from datetime import datetime
 from pathlib import Path
 
-APP_DIR = Path(__file__).resolve().parent
-APP_PY = APP_DIR / "app.py"
+FROZEN = bool(getattr(sys, "frozen", False))
+
+# 打包版只有一个 exe，靠这个标记复用它当作「纯服务」进程。
+SERVER_FLAG = "--server"
+
+if FROZEN:
+    # 打包版：exe 所在目录即应用目录（data/ 与其同级），静态资源在解压目录。
+    APP_DIR = Path(sys.executable).resolve().parent
+    APP_PY = None  # 源码不存在，服务由 exe 自身以 --server 身份拉起
+    ICON_PATH = Path(getattr(sys, "_MEIPASS", APP_DIR)) / "static" / "app.ico"
+else:
+    APP_DIR = Path(__file__).resolve().parent
+    APP_PY = APP_DIR / "app.py"
+    ICON_PATH = APP_DIR / "static" / "app.ico"
+
 DATA_DIR = APP_DIR / "data"
 LOG_PATH = DATA_DIR / "desktop-server.log"
-ICON_PATH = APP_DIR / "static" / "app.ico"
+
+# 独立的 AppUserModelID：没有它，Windows 会把窗口算作 pythonw.exe 的应用，
+# 任务栏按钮就显示 Python 图标，而不是我们自己的 app.ico。
+APP_USER_MODEL_ID = "iCloudPD.Studio.Desktop"
+
+WM_SETICON = 0x0080
+ICON_SMALL = 0
+ICON_BIG = 1
+ICON_SMALL2 = 2
+IMAGE_ICON = 1
+LR_LOADFROMFILE = 0x0010
+SM_CXICON = 32
+SM_CXSMICON = 49
 
 SPLASH = """<!doctype html>
 <html lang="zh-CN">
@@ -134,6 +159,124 @@ def screen_size() -> tuple[int, int]:
         return 1440, 960
 
 
+def set_app_user_model_id(app_id: str = APP_USER_MODEL_ID) -> None:
+    """给当前进程一个独立的应用标识。
+
+    必须在任何窗口创建之前调用，否则任务栏会把本窗口归到 pythonw.exe 名下，
+    显示 Python 的默认图标（也无法单独固定到任务栏）。
+    """
+    if os.name != "nt":
+        return
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(ctypes.c_wchar_p(app_id))
+    except Exception:
+        pass
+
+
+def register_app_user_model_id(
+    app_id: str = APP_USER_MODEL_ID,
+    icon_path: Path = ICON_PATH,
+    display_name: str = "iCloudPD Studio",
+) -> None:
+    """把 AUMID 登记到 HKCU，让任务栏/固定项用我们的图标而不是解释器图标。
+
+    这是微软给「未打包桌面应用」的官方做法，只写当前用户，不需要管理员权限。
+    """
+    if os.name != "nt" or not icon_path.is_file():
+        return
+    try:
+        import winreg
+
+        with winreg.CreateKey(winreg.HKEY_CURRENT_USER, rf"Software\Classes\AppUserModelId\{app_id}") as key:
+            winreg.SetValueEx(key, "DisplayName", 0, winreg.REG_SZ, display_name)
+            winreg.SetValueEx(key, "IconUri", 0, winreg.REG_SZ, str(icon_path))
+    except Exception:
+        pass
+
+
+def _find_windows(pid: int, title_hint: str) -> list[int]:
+    if os.name != "nt":
+        return []
+    import ctypes.wintypes as wt
+
+    user32 = ctypes.windll.user32
+    user32.EnumWindows.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+    user32.EnumWindows.restype = ctypes.c_int
+    user32.GetWindowThreadProcessId.argtypes = [wt.HWND, ctypes.POINTER(wt.DWORD)]
+    user32.GetWindowThreadProcessId.restype = wt.DWORD
+    user32.GetWindowTextLengthW.argtypes = [wt.HWND]
+    user32.GetWindowTextLengthW.restype = ctypes.c_int
+    user32.GetWindowTextW.argtypes = [wt.HWND, ctypes.c_wchar_p, ctypes.c_int]
+    user32.GetWindowTextW.restype = ctypes.c_int
+    user32.IsWindowVisible.argtypes = [wt.HWND]
+    user32.IsWindowVisible.restype = wt.BOOL
+
+    found: list[int] = []
+
+    def callback(hwnd, _lparam):
+        owner = wt.DWORD(0)
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(owner))
+        if owner.value != pid or not user32.IsWindowVisible(hwnd):
+            return True
+        length = user32.GetWindowTextLengthW(hwnd)
+        if length <= 0:
+            return True
+        buffer = ctypes.create_unicode_buffer(length + 1)
+        user32.GetWindowTextW(hwnd, buffer, length + 1)
+        if title_hint.lower() in buffer.value.lower():
+            found.append(int(hwnd or 0))
+        return True
+
+    callback_ref = ctypes.WINFUNCTYPE(ctypes.c_bool, wt.HWND, wt.LPARAM)(callback)
+    user32.EnumWindows(callback_ref, 0)
+    return found
+
+
+def apply_window_icon(icon_path: Path, title_hint: str = "iCloudPD", timeout: float = 15.0) -> None:
+    """把 ico 同时挂到窗口的大图标与小图标上。
+
+    WinForms 只设 Form.Icon，任务栏/Alt-Tab 在某些情况下仍沿用进程图标，
+    这里直接对 HWND 发 WM_SETICON 兜底。
+    """
+    if os.name != "nt" or not icon_path.is_file():
+        return
+    user32 = ctypes.windll.user32
+    user32.LoadImageW.restype = ctypes.c_void_p
+    user32.LoadImageW.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_wchar_p,
+        ctypes.c_uint,
+        ctypes.c_int,
+        ctypes.c_int,
+        ctypes.c_uint,
+    ]
+    user32.SendMessageW.restype = ctypes.c_void_p
+    user32.SendMessageW.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_size_t, ctypes.c_void_p]
+
+    def load(size: int) -> int | None:
+        handle = user32.LoadImageW(None, str(icon_path), IMAGE_ICON, size, size, LR_LOADFROMFILE)
+        return int(handle) if handle else None
+
+    big = load(int(user32.GetSystemMetrics(SM_CXICON) or 32))
+    small = load(int(user32.GetSystemMetrics(SM_CXSMICON) or 16))
+    if not big and not small:
+        return
+
+    pid = os.getpid()
+    deadline = time.time() + timeout
+    handles: list[int] = []
+    while time.time() < deadline and not handles:
+        handles = _find_windows(pid, title_hint)
+        if not handles:
+            time.sleep(0.2)
+    for hwnd in handles:
+        if big:
+            user32.SendMessageW(hwnd, WM_SETICON, ICON_BIG, big)
+        if small:
+            user32.SendMessageW(hwnd, WM_SETICON, ICON_SMALL, small)
+            user32.SendMessageW(hwnd, WM_SETICON, ICON_SMALL2, small)
+
+
 def tail(path: Path, limit: int = 5000) -> str:
     try:
         text = path.read_text(encoding="utf-8", errors="replace")
@@ -210,6 +353,9 @@ class Api:
 
 def main() -> int:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    # 必须在创建任何窗口之前设置，否则任务栏会沿用 pythonw.exe 的图标
+    set_app_user_model_id()
+    register_app_user_model_id()
     try:
         import webview  # type: ignore
     except Exception as exc:
@@ -226,7 +372,7 @@ def main() -> int:
             print(message)
         return 1
 
-    if not APP_PY.is_file():
+    if APP_PY is not None and not APP_PY.is_file():
         print(f"找不到 app.py: {APP_PY}")
         return 1
 
@@ -244,8 +390,13 @@ def main() -> int:
         log_file.write("\n\n===== " + datetime.now().isoformat(timespec="seconds") + " desktop start =====\n")
         log_file.flush()
         try:
+            server_cmd = (
+                [sys.executable, SERVER_FLAG, "--no-browser", "--port", str(port)]
+                if FROZEN
+                else [sys.executable, str(APP_PY), "--no-browser", "--port", str(port)]
+            )
             server = subprocess.Popen(
-                [sys.executable, str(APP_PY), "--no-browser", "--port", str(port)],
+                server_cmd,
                 cwd=str(APP_DIR),
                 stdout=log_file,
                 stderr=subprocess.STDOUT,
@@ -352,6 +503,15 @@ def main() -> int:
             )
 
     gui = "edgechromium" if os.name == "nt" else None
+
+    def install_icon() -> None:
+        # 窗口真正建出来之后才能拿到 HWND；加载完成后再补一次，避免被页面标题同步覆盖
+        apply_window_icon(ICON_PATH, timeout=20.0)
+        time.sleep(1.5)
+        apply_window_icon(ICON_PATH, timeout=3.0)
+
+    threading.Thread(target=install_icon, name="app-icon", daemon=True).start()
+
     try:
         webview.start(
             boot,
@@ -383,5 +543,49 @@ def main() -> int:
     return 0
 
 
+def log_crash() -> None:
+    """窗口模式下没有控制台，异常会无声消失。
+
+    把 traceback 落到 data/error.log，用户遇到问题至少能拿到一份可反馈的东西。
+    """
+    try:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        import traceback
+
+        with open(DATA_DIR / "error.log", "a", encoding="utf-8", errors="replace") as fh:
+            fh.write("\n\n===== " + datetime.now().isoformat(timespec="seconds") + " =====\n")
+            fh.write("argv: " + " ".join(sys.argv) + "\n")
+            fh.write(traceback.format_exc())
+    except Exception:
+        pass
+
+
+def entry() -> int:
+    """开窗身份 / 服务身份，共用一个 exe。
+
+    - 无参数：桌面窗口（webview 壳）
+    - --server：纯 HTTP 服务，供上面那个壳在子进程里拉起
+    """
+    try:
+        return dispatch()
+    except SystemExit:
+        raise
+    except BaseException:
+        log_crash()
+        raise
+
+
+def dispatch() -> int:
+    argv = sys.argv[1:]
+    if SERVER_FLAG in argv:
+        sys.argv = [sys.argv[0]] + [item for item in argv if item != SERVER_FLAG]
+        if str(APP_DIR) not in sys.path:
+            sys.path.insert(0, str(APP_DIR))
+        import app as studio  # noqa: PLC0415 - 延迟导入，窗口身份不必加载服务端
+
+        return studio.main()
+    return main()
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(entry())
