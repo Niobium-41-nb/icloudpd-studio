@@ -26,7 +26,24 @@
 - **深浅色主题**：暖白纸张与暗房两套主题，跟随系统或手动切换。
 - **响应式**：桌面、平板与手机均可使用。
 
-## 环境要求
+## 快速开始（免安装，推荐）
+
+不想装 Python 和 icloudpd？直接下载打包好的 Windows 版本：
+
+1. 从 [Releases](https://github.com/Niobium-41-nb/icloudpd-studio/releases) 下载 `iCloudPD-Studio-1.0.0-win64.zip`；
+2. 解压到任意目录（不要在压缩包里直接双击运行）；
+3. 双击 `iCloudPD Studio.exe`。
+
+`icloudpd` 引擎已随包分发在同一个文件夹里，不需要另外安装。首次运行会在程序旁边生成 `data/` 目录，保存配置、任务日志与缩略图缓存。
+
+需要 Microsoft Edge WebView2 Runtime，Windows 10/11 通常已自带。
+
+> 这是本地应用，不是网页应用。要真正跑一次同步，需要你自己的 Apple ID——这是 icloudpd 登录你账户的前提。没有账号也可以完整浏览界面、配置参数、查看本地目录的图库。
+
+---
+
+## 环境要求（从源码运行）
+
 
 - Windows 10/11（其他平台也可运行，路径与打开文件夹行为会略有不同）
 - Python 3.10+
