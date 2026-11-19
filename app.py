@@ -50,7 +50,7 @@ except Exception:  # pragma: no cover - optional HEIF support
 
 
 APP_NAME = "iCloudPD Studio"
-APP_VERSION = "1.0.1"
+APP_VERSION = "1.0.2"
 
 
 class _NullStream:
@@ -83,14 +83,9 @@ if sys.stderr is None:
     sys.stderr = _NullStream()  # type: ignore[assignment]
 
 
-# 开发态：代码与资源都在源码目录。
-# 打包态（PyInstaller）：静态资源被解压到 sys._MEIPASS，而 data/ 必须落在
-# exe 旁边——否则每次启动都写进临时目录，配置与任务记录会随重启丢失。
-FROZEN = bool(getattr(sys, "frozen", False))
-APP_DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
-RESOURCE_DIR = Path(getattr(sys, "_MEIPASS", APP_DIR))
+from runtime_paths import APP_DIR, DATA_DIR, FROZEN, RESOURCE_DIR
+
 STATIC_DIR = RESOURCE_DIR / "static"
-DATA_DIR = APP_DIR / "data"
 JOBS_DIR = DATA_DIR / "jobs"
 THUMB_DIR = DATA_DIR / "thumbs"
 CONFIG_PATH = DATA_DIR / "config.json"
@@ -300,7 +295,7 @@ def bundled_engine_path() -> Path | None:
     日志会整段丢失。独立进程没有这个副作用，输出捕获行为与官方发行版一致。
     """
     name = "icloudpd.exe" if os.name == "nt" else "icloudpd"
-    for base in (APP_DIR, RESOURCE_DIR):
+    for base in (RESOURCE_DIR, APP_DIR):
         candidate = base / name
         if candidate.is_file():
             return candidate

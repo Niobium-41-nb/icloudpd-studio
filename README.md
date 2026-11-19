@@ -30,13 +30,17 @@
 
 不想装 Python 和 icloudpd？直接下载打包好的 Windows 版本：
 
-1. 从 [Releases](https://github.com/Niobium-41-nb/icloudpd-studio/releases) 下载 `iCloudPD-Studio-1.0.1-win64.zip`；
-2. 解压到任意目录（不要在压缩包里直接双击运行）；
-3. 双击 `iCloudPD Studio.exe`。
+1. 从 [v1.0.2 发行版](https://github.com/Niobium-41-nb/icloudpd-studio/releases/tag/v1.0.2) 下载 `iCloudPD-Studio-1.0.2-win64.exe`（47.8 MiB）；
+2. 保存到本机目录，无需解压；
+3. 双击 EXE 运行。
 
-`icloudpd` 引擎已随包分发在同一个文件夹里，不需要另外安装。首次运行会在程序旁边生成 `data/` 目录，保存配置、任务日志与缩略图缓存。
+Python、桌面运行库、`icloudpd 1.32.3` 引擎和 HEIC 解码库均已内嵌，不需要同目录的 `_internal` 或独立引擎文件。首次运行优先在程序旁生成 `data/`，保存配置、任务日志与缩略图缓存；该目录不可写时使用 `%LOCALAPPDATA%\iCloudPD Studio\data`。回退不会自动迁移旧配置，请核对数据目录与下载位置。
 
-需要 Microsoft Edge WebView2 Runtime，Windows 10/11 通常已自带。
+原生窗口使用 Microsoft Edge WebView2 Runtime；WebView2 或 .NET 桌面组件不可用时自动打开浏览器兼容控制窗，也可以用 `--browser` 主动开启。兼容模式需要可用的 Edge、Chrome 或 Firefox；请保留控制窗，关闭它会停止本次启动的服务与下载。
+
+兼容目标为 **Windows 10/11 x64**，目前仅在 Windows 11 x64 实测；不支持 32 位 Windows，ARM 未验证，不能保证任意硬件或安全策略下均可运行。视频首帧仍需另行安装 ffmpeg。升级前请关闭旧版并备份配置，将新 EXE 放到原程序目录可继续使用可写的原 `data/`。
+
+SHA-256：`8ecc333c2c9e24db026a48dc295cff126b6b5b682f6fa1b6d06f526b8b0acfc9`。
 
 > 这是本地应用，不是网页应用。要真正跑一次同步，需要你自己的 Apple ID——这是 icloudpd 登录你账户的前提。没有账号也可以完整浏览界面、配置参数、查看本地目录的图库。
 

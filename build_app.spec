@@ -1,12 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-"""PyInstaller 打包配置：把 iCloudPD Studio 打成单个可分发程序。
-
-设计要点：
-- 同一个入口承担三种身份（窗口壳 / 本地服务 / icloudpd 引擎），见 desktop.py:entry。
-- icloudpd 与 pillow_heif 整包收集：前者是本项目唯一的实际下载引擎，后者决定
-  HEIC 缩略图能不能显示，缺任何一个都会让「下载即用」的承诺落空。
-- console=False：双击不弹黑框；子进程的 stdout 由 desktop.py 重定向到日志文件。
-"""
+"""将桌面运行库内嵌到 exe，避免下载解压的 DLL 来源标记阻止 .NET 加载。"""
 import os
 
 from PyInstaller.utils.hooks import collect_all
@@ -17,12 +10,15 @@ ROOT = os.path.abspath(os.getcwd())
 CONSOLE = os.environ.get("BUILD_CONSOLE") == "1"
 
 
-datas = [(os.path.join(ROOT, "static"), "static")]
+ENGINE_PATH = os.environ.get("BUILD_ENGINE_PATH", os.path.join(ROOT, "dist_engine", "icloudpd.exe"))
+if not os.path.isfile(ENGINE_PATH):
+    raise FileNotFoundError("请先构建 build_engine.spec，或用 BUILD_ENGINE_PATH 指定 icloudpd.exe")
+
+datas = [(os.path.join(ROOT, "static"), "static"), (os.path.join(ROOT, "LICENSE"), "."), (ENGINE_PATH, ".")]
 binaries = []
 hiddenimports = ["app"]
 
-# 只收集 pillow_heif：它决定 HEIC 缩略图能否显示。icloudpd 由 build_engine.spec
-# 单独打成 icloudpd.exe 与主程序并排放置，不重复塞进本包。
+# 内嵌独立控制台引擎，保留下载任务的 stdin/stdout 管道。
 for package in ("pillow_heif",):
     pkg_datas, pkg_binaries, pkg_hidden = collect_all(package)
     datas += pkg_datas
@@ -61,8 +57,9 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
+    a.binaries,
+    a.datas,
     [],
-    exclude_binaries=True,
     name="iCloudPD Studio",
     debug=False,
     bootloader_ignore_signals=False,
@@ -71,13 +68,4 @@ exe = EXE(
     console=CONSOLE,
     disable_windowed_traceback=False,
     icon=os.path.join(ROOT, "static", "app.ico"),
-)
-
-coll = COLLECT(
-    exe,
-    a.binaries,
-    a.datas,
-    strip=False,
-    upx=False,
-    name="iCloudPD Studio",
 )

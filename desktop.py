@@ -22,22 +22,12 @@ import webbrowser
 from datetime import datetime
 from pathlib import Path
 
-FROZEN = bool(getattr(sys, "frozen", False))
+from runtime_paths import APP_DIR, DATA_DIR, FROZEN, RESOURCE_DIR
 
-# 打包版只有一个 exe，靠这个标记复用它当作「纯服务」进程。
 SERVER_FLAG = "--server"
-
-if FROZEN:
-    # 打包版：exe 所在目录即应用目录（data/ 与其同级），静态资源在解压目录。
-    APP_DIR = Path(sys.executable).resolve().parent
-    APP_PY = None  # 源码不存在，服务由 exe 自身以 --server 身份拉起
-    ICON_PATH = Path(getattr(sys, "_MEIPASS", APP_DIR)) / "static" / "app.ico"
-else:
-    APP_DIR = Path(__file__).resolve().parent
-    APP_PY = APP_DIR / "app.py"
-    ICON_PATH = APP_DIR / "static" / "app.ico"
-
-DATA_DIR = APP_DIR / "data"
+BROWSER_FLAG = "--browser"
+APP_PY = None if FROZEN else APP_DIR / "app.py"
+ICON_PATH = RESOURCE_DIR / "static" / "app.ico"
 LOG_PATH = DATA_DIR / "desktop-server.log"
 
 # 独立的 AppUserModelID：没有它，Windows 会把窗口算作 pythonw.exe 的应用，
@@ -136,7 +126,7 @@ ERROR = """<!doctype html>
 </style></head>
 <body><div class="card">
   <h1>本地服务没有启动</h1>
-  <p>请确认 Python 与 icloudpd 可用。下面是启动日志的最后部分：</p>
+  <p>请检查可用磁盘空间、文件权限及安全软件提示。下面是启动日志的最后部分：</p>
   <pre>{{LOG}}</pre>
   <div class="row">
     <button class="primary" onclick="pywebview.api.open_log()">打开完整日志</button>
@@ -285,7 +275,7 @@ def tail(path: Path, limit: int = 5000) -> str:
         return f"(无法读取日志: {exc})"
 
 
-def wait_health(url: str, proc: subprocess.Popen | None, timeout: float = 45.0) -> tuple[bool, str]:
+def wait_health(url: str, proc: subprocess.Popen | None, timeout: float = 90.0) -> tuple[bool, str]:
     started = time.time()
     last_error = ""
     while time.time() - started < timeout:
@@ -334,7 +324,6 @@ def request_shutdown(url: str) -> None:
 class Api:
     def __init__(self):
         self._window = None
-        self._closed = threading.Event()
 
     def bind(self, window) -> None:
         self._window = window
@@ -351,26 +340,94 @@ class Api:
             pass
 
 
-def main() -> int:
+def run_browser_mode(url: str, server: subprocess.Popen | None, reason: str = "") -> int:
+    import tkinter as tk
+    from tkinter import ttk
+
+    root = tk.Tk()
+    root.title("iCloudPD Studio · 浏览器兼容模式")
+    root.resizable(True, False)
+    if ICON_PATH.is_file():
+        root.iconbitmap(str(ICON_PATH))
+    frame = ttk.Frame(root, padding=20)
+    frame.pack(fill="both", expand=True)
+    width = min(500, max(240, root.winfo_screenwidth() - 100))
+    ttk.Label(frame, text="iCloudPD Studio", font=("Segoe UI", 16)).pack(anchor="w")
+    ttk.Label(
+        frame,
+        text="请保留此窗口，使用浏览器管理照片；关闭此窗口会停止本次启动的服务和下载。",
+        wraplength=width,
+    ).pack(anchor="w", pady=(12, 8))
+    if reason:
+        ttk.Label(frame, text="桌面组件不可用，已切换兼容模式。", wraplength=width).pack(anchor="w")
+    status = tk.StringVar(value="正在启动本地服务…")
+    ttk.Label(frame, textvariable=status, wraplength=width).pack(anchor="w", pady=8)
+    address = ttk.Entry(frame, width=max(30, width // 9))
+    address.insert(0, url)
+    address.configure(state="readonly")
+    address.pack(fill="x")
+    ttk.Label(frame, text=f"数据目录：{DATA_DIR}", wraplength=width).pack(anchor="w", pady=8)
+
+    def open_browser() -> None:
+        try:
+            opened = webbrowser.open(url)
+        except Exception:
+            opened = False
+        status.set(
+            "服务已就绪；若浏览器未打开，请复制上方地址到 Edge、Chrome 或 Firefox。"
+            if opened else "无法自动打开浏览器，请复制上方地址到 Edge、Chrome 或 Firefox。"
+        )
+
+    buttons = ttk.Frame(frame)
+    buttons.pack(fill="x", pady=(8, 0))
+    open_button = ttk.Button(buttons, text="打开浏览器", command=open_browser, state="disabled")
+    open_button.pack(side="left")
+    ttk.Button(buttons, text="退出并停止服务", command=root.destroy).pack(side="right")
+    health: list[tuple[bool, str]] = []
+    threading.Thread(target=lambda: health.append(wait_health(url, server)), daemon=True).start()
+    result = 0
+
+    def check_health() -> None:
+        nonlocal result
+        if not health:
+            root.after(100, check_health)
+            return
+        ok, detail = health[0]
+        if not ok:
+            result = 1
+            status.set(f"本地服务启动失败：{detail}。请查看 {LOG_PATH}")
+            return
+        open_button.configure(state="normal")
+        open_browser()
+        test_ms = int(os.environ.get("ICLOUDPD_DESKTOP_TEST_MS", "0") or 0)
+        if test_ms > 0:
+            root.after(test_ms, root.destroy)
+        monitor_server()
+
+    def monitor_server() -> None:
+        nonlocal result
+        if server is not None and server.poll() is not None:
+            result = 1
+            status.set(f"本地服务已退出，请查看 {LOG_PATH}")
+            open_button.configure(state="disabled")
+        else:
+            root.after(1000, monitor_server)
+
+    root.after(100, check_health)
+    try:
+        root.mainloop()
+    finally:
+        try:
+            root.destroy()
+        except tk.TclError:
+            pass
+    return result
+
+
+def main(browser_mode: bool = False) -> int:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
-    # 必须在创建任何窗口之前设置，否则任务栏会沿用 pythonw.exe 的图标
     set_app_user_model_id()
     register_app_user_model_id()
-    try:
-        import webview  # type: ignore
-    except Exception as exc:
-        message = (
-            "缺少桌面窗口组件 pywebview。\n\n"
-            "请在终端执行：python -m pip install pywebview\n\n"
-            f"详细信息：{exc}"
-        )
-        try:
-            import tkinter.messagebox as messagebox
-
-            messagebox.showerror("iCloudPD Studio", message)
-        except Exception:
-            print(message)
-        return 1
 
     if APP_PY is not None and not APP_PY.is_file():
         print(f"找不到 app.py: {APP_PY}")
@@ -401,7 +458,7 @@ def main() -> int:
                 stdout=log_file,
                 stderr=subprocess.STDOUT,
                 creationflags=creationflags,
-                env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+                env={**os.environ, "PYTHONIOENCODING": "utf-8", "ICLOUDPD_DATA_DIR": str(DATA_DIR)},
             )
         except Exception as exc:
             log_file.write(f"无法启动服务: {exc}\n")
@@ -414,8 +471,7 @@ def main() -> int:
                 print(exc)
             return 1
 
-    api = Api()
-    closed = api._closed
+    closed = threading.Event()
 
     def stop_server() -> None:
         if server is None:
@@ -453,94 +509,81 @@ def main() -> int:
             except Exception:
                 pass
 
-    window = webview.create_window(
-        "iCloudPD Studio",
-        html=SPLASH,
-        width=640,
-        height=420,
-        min_size=(640, 420),
-        resizable=True,
-        background_color="#12110e",
-        text_select=True,
-        js_api=api,
-    )
-    api.bind(window)
-
-    if window is None:
-        stop_server()
-        return 1
-
-    window.events.closed += lambda: stop_server()
-
-    width, height = screen_size()
-    win_w = max(1024, min(1440, width - 80))
-    win_h = max(700, min(940, height - 100))
-
-    def boot() -> None:
-        ok, detail = wait_health(url, server)
-        if closed.is_set():
-            return
-        if ok:
-            try:
-                window.load_url(url)
-                time.sleep(0.35)
-                window.resize(win_w, win_h)
-                test_ms = int(os.environ.get("ICLOUDPD_DESKTOP_TEST_MS", "0") or 0)
-                if test_ms > 0:
-                    timer = threading.Timer(test_ms / 1000.0, window.destroy)
-                    timer.daemon = True
-                    timer.start()
-            except Exception as exc:
-                window.load_html(
-                    ERROR.replace("{{LOG}}", html.escape(f"{detail}\n无法加载界面: {exc}\n\n{tail(LOG_PATH)}"))
-                )
-        else:
-            window.load_html(
-                ERROR.replace(
-                    "{{LOG}}",
-                    html.escape(f"{detail}\n\n{tail(LOG_PATH)}"),
-                )
-            )
-
-    gui = "edgechromium" if os.name == "nt" else None
-
-    def install_icon() -> None:
-        # 窗口真正建出来之后才能拿到 HWND；加载完成后再补一次，避免被页面标题同步覆盖
-        apply_window_icon(ICON_PATH, timeout=20.0)
-        time.sleep(1.5)
-        apply_window_icon(ICON_PATH, timeout=3.0)
-
-    threading.Thread(target=install_icon, name="app-icon", daemon=True).start()
-
     try:
-        webview.start(
-            boot,
-            gui=gui,
-            private_mode=False,
-            storage_path=str(DATA_DIR / "webview"),
-            icon=str(ICON_PATH) if ICON_PATH.exists() else None,
-            debug=False,
-        )
-    except Exception as exc:
-        print(f"WebView 启动失败: {exc}")
+        if browser_mode:
+            return run_browser_mode(url, server)
         try:
-            import tkinter.messagebox as messagebox
+            import webview
 
-            answer = messagebox.askyesno(
+            if os.name == "nt":
+                from webview.guilib import initialize
+
+                if initialize("edgechromium").renderer != "edgechromium":
+                    raise RuntimeError("未检测到可用的 WebView2，请使用浏览器兼容模式")
+
+            width, height = screen_size()
+            win_w = max(320, min(1440, width - 80))
+            win_h = max(300, min(940, height - 100))
+            api = Api()
+            window = webview.create_window(
                 "iCloudPD Studio",
-                f"桌面窗口启动失败：\n{exc}\n\n是否改用默认浏览器打开？",
+                html=SPLASH,
+                width=min(640, win_w),
+                height=min(420, win_h),
+                min_size=(min(640, win_w), min(420, win_h)),
+                resizable=True,
+                background_color="#12110e",
+                text_select=True,
+                js_api=api,
             )
-            if answer:
-                ok, _ = wait_health(url, server)
+            if window is None:
+                raise RuntimeError("无法创建桌面窗口")
+            api.bind(window)
+            window.events.closed += lambda: closed.set()
+
+            def boot() -> None:
+                ok, detail = wait_health(url, server)
+                if closed.is_set():
+                    return
                 if ok:
-                    webbrowser.open(url)
-                    print("按 Enter 结束服务和窗口…")
-                    input()
-        except Exception:
-            pass
+                    try:
+                        window.load_url(url)
+                        time.sleep(0.35)
+                        window.resize(win_w, win_h)
+                        test_ms = int(os.environ.get("ICLOUDPD_DESKTOP_TEST_MS", "0") or 0)
+                        if test_ms > 0:
+                            timer = threading.Timer(test_ms / 1000.0, window.destroy)
+                            timer.daemon = True
+                            timer.start()
+                    except Exception as exc:
+                        window.load_html(
+                            ERROR.replace("{{LOG}}", html.escape(f"无法加载界面: {exc}\n\n{tail(LOG_PATH)}"))
+                        )
+                else:
+                    window.load_html(ERROR.replace("{{LOG}}", html.escape(f"{detail}\n\n{tail(LOG_PATH)}")))
+
+            def install_icon() -> None:
+                apply_window_icon(ICON_PATH, timeout=20.0)
+                time.sleep(1.5)
+                apply_window_icon(ICON_PATH, timeout=3.0)
+
+            threading.Thread(target=install_icon, name="app-icon", daemon=True).start()
+            webview.start(
+                boot,
+                gui="edgechromium" if os.name == "nt" else None,
+                private_mode=False,
+                storage_path=str(DATA_DIR / "webview"),
+                icon=str(ICON_PATH) if ICON_PATH.exists() else None,
+                debug=False,
+            )
+        except Exception as exc:
+            if log_file is not None:
+                log_file.write(f"桌面组件不可用，切换浏览器模式：{exc}\n")
+                log_file.flush()
+            return run_browser_mode(url, server, str(exc))
+        return 0
     finally:
         stop_server()
-    return 0
 
 
 def log_crash() -> None:
@@ -584,7 +627,7 @@ def dispatch() -> int:
         import app as studio  # noqa: PLC0415 - 延迟导入，窗口身份不必加载服务端
 
         return studio.main()
-    return main()
+    return main(browser_mode=BROWSER_FLAG in argv)
 
 
 if __name__ == "__main__":

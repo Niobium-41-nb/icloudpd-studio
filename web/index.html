@@ -426,26 +426,26 @@
     <div class="shell">
       <div class="section-head split">
         <div>
-          <p class="eyebrow"><span class="dot"></span> 2026.11.19 · v1.0.1 更新</p>
-          <h2 id="updates-title">图库更大，<br>浏览更轻。</h2>
+          <p class="eyebrow"><span class="dot"></span> 2026.11.19 · v1.0.2 更新</p>
+          <h2 id="updates-title">一个 EXE，<br>少一点启动阻碍。</h2>
         </div>
-        <p class="section-lede">这轮优化已包含在 v1.0.1 免安装包中，作用于本机图库与媒体预览，不改变照片只在本机保存的边界。在线体验仍是模拟演示；下载最新版即可在自己的电脑上使用这些改进。</p>
+        <p class="section-lede">v1.0.2 将运行库与下载引擎装进同一个 EXE，修复下载版 DLL 加载失败，并增加浏览器兼容模式。保留完整图库统计、缩略图并发与媒体预览优化；在线体验仍是模拟演示，照片只在本机保存。</p>
       </div>
       <div class="how-notes">
         <article class="note-card">
-          <span class="note-label">完整统计</span>
-          <h3>图库再大，也不漏算</h3>
-          <p>扫描完整下载目录，统计全部媒体的数量与体积；浏览索引保留最新 30,000 个文件，不限制实际备份数量。短时缓存减少重复扫描，手动刷新仍会重新读取目录。</p>
+          <span class="note-label">单文件交付</span>
+          <h3>无需解压，也不怕漏文件</h3>
+          <p>Python、桌面运行库、icloudpd 引擎与 HEIC 解码库均已内嵌，不再依赖旁边的 DLL 或引擎文件。修复 Windows 下载来源标记引起的运行库加载失败，不要求修改安全策略。</p>
         </article>
         <article class="note-card">
-          <span class="note-label">缩略图提速</span>
-          <h3>同一张图，不重复生成</h3>
-          <p>并发请求复用同一份缩略图，大尺寸 JPEG 在解码时先降采样；保留照片方向与透明背景处理，减少预览时的等待和重复计算。</p>
+          <span class="note-label">浏览器兼容模式</span>
+          <h3>桌面组件缺失，换条路打开</h3>
+          <p>WebView2 或 .NET 桌面组件不可用时，自动打开兼容控制窗并使用默认浏览器。请保留控制窗；关闭它会停止本次启动的服务与下载。需要可用的现代浏览器。</p>
         </article>
         <article class="note-card">
-          <span class="note-label">媒体预览</span>
-          <h3>文件更新，预览跟着更新</h3>
-          <p>文件变化后重新校验浏览器缓存，避免一直显示旧图；修正视频分段读取与拖动进度的边界处理。扫描、缩略图和媒体接口均已补充回归测试。</p>
+          <span class="note-label">数据目录回退</span>
+          <h3>程序目录不可写，使用用户目录</h3>
+          <p>优先使用程序旁的 data/；无法写入时，改用当前用户 LocalAppData 下的 iCloudPD Studio/data。不会自动迁移旧配置，请核对下载位置。窗口尺寸也会适配较小屏幕。</p>
         </article>
       </div>
     </div>
@@ -513,12 +513,12 @@
           <p class="eyebrow"><span class="dot"></span> GET STARTED</p>
           <h2>五步，<br>把照片拿回来。</h2>
         </div>
-        <p class="section-lede">不需要 Python，不需要单独安装 icloudpd。首次运行会在程序旁边生成 data/ 目录，保存配置、日志与缩略图缓存。</p>
+        <p class="section-lede">不需要 Python，不需要单独安装 icloudpd。配置、日志与缩略图优先保存在程序旁的 data/；无法写入时使用当前用户的 LocalAppData 目录。</p>
       </div>
 
       <ol class="steps">
-        <li><span class="step-num">01</span><div><h3>下载并解压</h3><p>下载 47.7 MiB 的 Windows 免安装包，解压到任意目录。不要在压缩包里直接双击运行。</p></div></li>
-        <li><span class="step-num">02</span><div><h3>双击 iCloudPD Studio.exe</h3><p>引擎已随包分发在同一个文件夹里。首次打开会在程序旁边生成 data/ 目录。</p></div></li>
+        <li><span class="step-num">01</span><div><h3>下载单个 EXE</h3><p>下载 47.8 MiB 的 Windows x64 可执行文件，保存到本机目录，无需解压。升级前先关闭旧版并备份配置。</p></div></li>
+        <li><span class="step-num">02</span><div><h3>双击运行</h3><p>引擎已内嵌。桌面组件不可用时自动切换浏览器模式；请保留兼容控制窗，并核对数据目录与下载位置。</p></div></li>
         <li><span class="step-num">03</span><div><h3>登录 / 重验</h3><p>输入 Apple ID，按任务面板提示完成双重认证；会话保存后，后续同步通常不再需要密码。</p></div></li>
         <li><span class="step-num">04</span><div><h3>选范围，先预览</h3><p>建议先勾选「仅预览待下载清单」，确认范围与右侧生成的命令，再正式同步。</p></div></li>
         <li><span class="step-num">05</span><div><h3>开始同步，去图库验收</h3><p>任务记录看实时日志；照片图库浏览已经落地的文件。中断后重跑同一配置即可增量续传。</p></div></li>
@@ -546,6 +546,7 @@
           <li><span class="time">11-19</span><div><h3>在线体验站</h3><p>用 Qoder 复刻同步配置流程、实时命令预览、模拟任务与本地图库，浏览器打开即可体验。</p></div></li>
           <li><span class="time">11-19</span><div><h3>部署 Qoder Sites</h3><p>静态站点公网发布，评委无需安装即可访问；桌面版通过 GitHub Release 下载。</p></div></li>
           <li><span class="time">11-19</span><div><h3>图库性能与预览优化</h3><p>用 Qoder 优化完整目录统计、缩略图并发与媒体缓存，修正视频分段读取；新增 48 项回归测试，本机运行 46 项通过、2 项因符号链接权限跳过。改动已合并至源码主分支，并随 v1.0.1 免安装包发布。</p></div></li>
+          <li><span class="time">11-19</span><div><h3>单 EXE 与启动兼容修复</h3><p>v1.0.2 内嵌运行库与引擎，修复下载来源标记导致的 DLL 加载失败，增加浏览器兼容窗与数据目录回退。86 项回归测试中 84 项通过、2 项因权限跳过；目前仅在 Windows 11 x64 实测。</p></div></li>
         </ol>
 
         <div class="shot-stack">
@@ -568,30 +569,31 @@
         <div class="download-main">
           <p class="eyebrow"><span class="dot"></span> DOWNLOAD</p>
           <h2>带回去，<br>在自己的电脑上跑。</h2>
-          <p class="section-lede">Windows x64 免安装版。解压后双击即可打开，引擎与 HEIC 解码库已随包分发。</p>
+          <p class="section-lede">Windows x64 单文件 EXE。无需解压，Python、下载引擎与 HEIC 解码库均已内嵌。</p>
           <div class="download-actions">
-            <a class="btn btn-primary" href="https://github.com/Niobium-41-nb/icloudpd-studio/releases/download/v1.0.1/iCloudPD-Studio-1.0.1-win64.zip" target="_blank" rel="noopener">
+            <a class="btn btn-primary" href="https://github.com/Niobium-41-nb/icloudpd-studio/releases/download/v1.0.2/iCloudPD-Studio-1.0.2-win64.exe" target="_blank" rel="noopener">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
-              下载 iCloudPD Studio 1.0.1
+              下载 iCloudPD Studio 1.0.2
             </a>
             <a class="btn btn-ghost" href="https://github.com/Niobium-41-nb/icloudpd-studio" target="_blank" rel="noopener">查看源代码</a>
           </div>
           <p class="download-note">需要自己的 Apple ID 才能真实同步；没有账号也可以完整浏览界面、配置参数与本地图库。</p>
-          <p class="download-note"><strong>版本说明：</strong>v1.0.1 已包含完整图库统计、缩略图并发复用与媒体预览修复，无需配置 Python 环境；<a class="text-btn" href="#updates">查看本次更新说明</a>。</p>
+          <p class="download-note"><strong>兼容说明：</strong>目标为 Windows 10/11 x64，目前仅实测 Windows 11；不支持 32 位 Windows，ARM 未验证。缺少桌面组件时使用现代浏览器，不能保证任意配置均可运行。</p>
+          <p class="download-note"><strong>版本说明：</strong>修复下载版启动失败，支持浏览器与数据目录回退，保留图库及预览优化；视频首帧仍需另装 ffmpeg。<a class="text-btn" href="#updates">查看本次更新说明</a>。</p>
         </div>
 
         <div class="download-meta">
           <dl>
-            <div><dt>版本</dt><dd>1.0.1</dd></div>
-            <div><dt>平台</dt><dd>Windows x64</dd></div>
-            <div><dt>大小</dt><dd>47.7 MiB</dd></div>
+            <div><dt>版本</dt><dd>1.0.2</dd></div>
+            <div><dt>平台</dt><dd>Windows 10/11 x64</dd></div>
+            <div><dt>大小</dt><dd>47.8 MiB · 单 EXE</dd></div>
             <div><dt>引擎</dt><dd>icloudpd 1.32.3</dd></div>
             <div><dt>许可</dt><dd>MIT</dd></div>
-            <div><dt>依赖</dt><dd>WebView2 Runtime</dd></div>
+            <div><dt>界面</dt><dd>WebView2 / 现代浏览器</dd></div>
           </dl>
           <details class="checksum">
             <summary>SHA-256 校验</summary>
-            <code>da40fc41a8921d3519558cfc4f8c71ca04eae77403d4cb9397bb20e5a7e4da01</code>
+            <code>8ecc333c2c9e24db026a48dc295cff126b6b5b682f6fa1b6d06f526b8b0acfc9</code>
           </details>
         </div>
       </div>
