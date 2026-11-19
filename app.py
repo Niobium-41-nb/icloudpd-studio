@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import heapq
 import json
 import locale
 import mimetypes
@@ -21,6 +22,7 @@ import os
 import re
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import threading
@@ -103,6 +105,7 @@ VIDEO_EXTS = {
 MEDIA_EXTS = IMAGE_EXTS | VIDEO_EXTS
 BROWSER_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".avif"}
 
+MAX_MEDIA_ITEMS = 30000
 MAX_LOG_LINES = 2500
 MAX_PERSISTED_LOGS = 700
 ANSI_RE = re.compile(r"\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))")
@@ -132,6 +135,7 @@ CONFIG_LOCK = threading.RLock()
 JOBS_LOCK = threading.RLock()
 MEDIA_LOCK = threading.RLock()
 THUMB_SEMAPHORE = threading.BoundedSemaphore(4)
+THUMB_LOCKS = tuple(threading.Lock() for _ in range(64))
 
 MEDIA_CACHE: dict = {"at": 0.0, "items": [], "stats": {}, "dir": None}
 ENGINE_CACHE: dict = {"at": 0.0, "value": None}
@@ -447,15 +451,21 @@ def cookie_profiles(cfg: dict) -> list[dict]:
 def scan_media(directory: str, force: bool = False) -> tuple[list[dict], dict]:
     directory = str(directory or "")
     with MEDIA_LOCK:
+        cached_at = MEDIA_CACHE.get("at", 0)
         if (
             not force
+            and cached_at > 0
             and MEDIA_CACHE.get("dir") == directory
-            and time.time() - MEDIA_CACHE.get("at", 0) < 20
+            and time.monotonic() - cached_at < 20
         ):
             return list(MEDIA_CACHE["items"]), dict(MEDIA_CACHE["stats"])
+        root = Path(os.path.expandvars(os.path.expanduser(directory)))
+        items, stats = _scan_media(root)
+        MEDIA_CACHE.update({"at": time.monotonic(), "items": items, "stats": stats, "dir": directory})
+        return list(items), dict(stats)
 
-    root = Path(os.path.expandvars(os.path.expanduser(directory)))
-    items: list[dict] = []
+
+def _scan_media(root: Path) -> tuple[list[dict], dict]:
     stats = {
         "count": 0,
         "photos": 0,
@@ -467,54 +477,63 @@ def scan_media(directory: str, force: bool = False) -> tuple[list[dict], dict]:
         "scanned_at": now_iso(),
         "truncated": False,
     }
-    if root.is_dir():
-        skip_dirs = {".thumbnails", "@eaDir", "#recycle", ".Trash", "node_modules"}
+    newest: list[tuple] = []
+    skip_dirs = {"@eaDir", "#recycle", "node_modules"}
+    pending = [(str(root), "")] if stats["exists"] else []
+    while pending:
+        directory, prefix = pending.pop()
         try:
-            for current, dirnames, filenames in os.walk(root):
-                dirnames[:] = [d for d in dirnames if d not in skip_dirs and not d.startswith(".")]
-                for filename in filenames:
-                    if filename.startswith("."):
+            with os.scandir(directory) as entries:
+                for entry in entries:
+                    if entry.name.startswith("."):
                         continue
-                    ext = Path(filename).suffix.lower()
-                    if ext not in MEDIA_EXTS:
-                        continue
-                    abs_path = Path(current) / filename
+                    rel = prefix + entry.name
                     try:
-                        st = abs_path.stat()
+                        if entry.is_dir(follow_symlinks=False):
+                            if entry.name in skip_dirs:
+                                continue
+                            if (
+                                os.name == "nt"
+                                and entry.stat(follow_symlinks=False).st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
+                            ):
+                                continue
+                            pending.append((entry.path, rel + "/"))
+                            continue
+                        ext = os.path.splitext(entry.name)[1].lower()
+                        if ext not in MEDIA_EXTS or not entry.is_file(follow_symlinks=False):
+                            continue
+                        st = entry.stat(follow_symlinks=False)
                     except OSError:
                         continue
-                    kind = "video" if ext in VIDEO_EXTS else "photo"
                     stats["count"] += 1
-                    stats["photos" if kind == "photo" else "videos"] += 1
+                    stats["videos" if ext in VIDEO_EXTS else "photos"] += 1
                     stats["bytes"] += st.st_size
-                    mtime_iso = datetime.fromtimestamp(st.st_mtime).astimezone().isoformat(timespec="seconds")
-                    if not stats["latest_at"] or mtime_iso > stats["latest_at"]:
-                        stats["latest_at"] = mtime_iso
-                    if len(items) < 30000:
-                        items.append(
-                            {
-                                "rel": safe_relative(abs_path, root).replace("\\", "/"),
-                                "name": filename,
-                                "kind": kind,
-                                "ext": ext.lstrip("."),
-                                "size": st.st_size,
-                                "size_label": human_bytes(st.st_size),
-                                "modified_at": mtime_iso,
-                                "mtime": st.st_mtime,
-                                "renderable": ext in BROWSER_IMAGE_EXTS,
-                            }
-                        )
-                    else:
-                        stats["truncated"] = True
-                if len(items) >= 30000:
-                    break
+                    record = (st.st_mtime, rel, st.st_size, ext)
+                    if len(newest) < MAX_MEDIA_ITEMS:
+                        heapq.heappush(newest, record)
+                    elif record > newest[0]:
+                        heapq.heapreplace(newest, record)
         except OSError:
-            pass
-    items.sort(key=lambda x: (x["mtime"], x["rel"]), reverse=True)
+            continue
+    items = []
+    for mtime, rel, size, ext in sorted(newest, reverse=True):
+        items.append(
+            {
+                "rel": rel,
+                "name": rel.rsplit("/", 1)[-1],
+                "kind": "video" if ext in VIDEO_EXTS else "photo",
+                "ext": ext.lstrip("."),
+                "size": size,
+                "size_label": human_bytes(size),
+                "modified_at": datetime.fromtimestamp(mtime).astimezone().isoformat(timespec="seconds"),
+                "mtime": mtime,
+                "renderable": ext in BROWSER_IMAGE_EXTS,
+            }
+        )
+    stats["latest_at"] = items[0]["modified_at"] if items else None
+    stats["truncated"] = stats["count"] > MAX_MEDIA_ITEMS
     stats["bytes_label"] = human_bytes(stats["bytes"])
-    with MEDIA_LOCK:
-        MEDIA_CACHE.update({"at": time.time(), "items": items, "stats": stats, "dir": directory})
-    return list(items), dict(stats)
+    return items, stats
 
 
 def thumb_cache_path(abs_path: Path, width: int) -> Path:
@@ -532,9 +551,18 @@ def make_image_thumb(src: Path, dest: Path, width: int, quality: int = 82) -> bo
         return False
     try:
         with Image.open(src) as img:
+            if img.format == "JPEG":
+                rotated = img.getexif().get(274) in (5, 6, 7, 8)
+                ratio = min(1, width / max(img.height if rotated else img.width, 1))
+                img.draft("RGB", (max(1, int(img.width * ratio)), max(1, int(img.height * ratio))))
             img = ImageOps.exif_transpose(img)
             if getattr(img, "is_animated", False):
                 img.seek(0)
+            if img.mode == "P":
+                img = img.convert("RGBA")
+            if img.width > width:
+                height = max(1, int(img.height * width / img.width))
+                img = img.resize((width, height), Image.Resampling.LANCZOS, reducing_gap=3.0)
             if img.mode not in ("RGB", "L"):
                 if img.mode in ("RGBA", "LA", "P"):
                     background = Image.new("RGB", img.size, (246, 244, 239))
@@ -545,10 +573,6 @@ def make_image_thumb(src: Path, dest: Path, width: int, quality: int = 82) -> bo
                     img = img.convert("RGB")
             else:
                 img = img.convert("RGB")
-            ratio = width / max(img.width, 1)
-            height = max(1, int(img.height * ratio))
-            if ratio < 1 or len(img.getbands()) > 3:
-                img = img.resize((width, height), Image.Resampling.LANCZOS)
             img.save(dest, "JPEG", quality=quality, optimize=True, progressive=True)
         return True
     except Exception:
@@ -594,30 +618,35 @@ def get_thumbnail(abs_path: Path, width: int) -> Path | None:
     dest = thumb_cache_path(abs_path, width)
     if dest.is_file() and dest.stat().st_size > 0:
         return dest
-    THUMB_DIR.mkdir(parents=True, exist_ok=True)
-    acquired = THUMB_SEMAPHORE.acquire(timeout=20)
-    if not acquired:
+    lock = THUMB_LOCKS[hash(dest) % len(THUMB_LOCKS)]
+    if not lock.acquire(timeout=60):
         return None
     try:
         if dest.is_file() and dest.stat().st_size > 0:
             return dest
+        if not THUMB_SEMAPHORE.acquire(timeout=20):
+            return None
         tmp = dest.with_name(f".{dest.name}.{threading.get_ident()}.tmp.jpg")
-        ext = normalize_media_ext(abs_path)
-        ok = False
-        if ext in IMAGE_EXTS:
-            ok = make_image_thumb(abs_path, tmp, width)
-        elif ext in VIDEO_EXTS:
-            ok = make_video_thumb(abs_path, tmp, width)
-        if ok and tmp.is_file() and tmp.stat().st_size > 0:
-            os.replace(tmp, dest)
-            return dest
         try:
-            tmp.unlink(missing_ok=True)
-        except Exception:
-            pass
-        return None
+            THUMB_DIR.mkdir(parents=True, exist_ok=True)
+            ext = normalize_media_ext(abs_path)
+            ok = False
+            if ext in IMAGE_EXTS:
+                ok = make_image_thumb(abs_path, tmp, width)
+            elif ext in VIDEO_EXTS:
+                ok = make_video_thumb(abs_path, tmp, width)
+            if ok and tmp.is_file() and tmp.stat().st_size > 0:
+                os.replace(tmp, dest)
+                return dest
+            return None
+        finally:
+            try:
+                tmp.unlink(missing_ok=True)
+            except OSError:
+                pass
+            THUMB_SEMAPHORE.release()
     finally:
-        THUMB_SEMAPHORE.release()
+        lock.release()
 
 
 # ---------------------------------------------------------------------------
@@ -843,7 +872,8 @@ class Job:
                     self.error = f"icloudpd 退出码 {code}"
             self.ended_at = now_iso()
             self.password = None
-        MEDIA_CACHE["at"] = 0
+        with MEDIA_LOCK:
+            MEDIA_CACHE["at"] = 0
         self.add_log(
             "[ui] 任务完成" if self.status == "completed" else f"[ui] 任务结束：{self.status}",
             level="success" if self.status == "completed" else ("warn" if self.status == "stopped" else "error"),
@@ -1410,7 +1440,7 @@ class Handler(BaseHTTPRequestHandler):
                     limit = max(1, min(200, int(query.get("limit", ["60"])[0])))
                 except Exception:
                     offset, limit = 0, 60
-                page = items[offset : offset + limit]
+                page = [dict(item) for item in items[offset : offset + limit]]
                 for item in page:
                     item["thumb_url"] = "/api/thumb?w=720&path=" + urllib.parse.quote(item["rel"])
                     item["preview_url"] = (
@@ -1544,7 +1574,8 @@ class Handler(BaseHTTPRequestHandler):
         if "cookie_dir" in body and str(body.get("cookie_dir") or "").strip():
             cfg["cookie_dir"] = str(body["cookie_dir"]).strip()
         cfg = save_config(cfg)
-        MEDIA_CACHE["at"] = 0
+        with MEDIA_LOCK:
+            MEDIA_CACHE["at"] = 0
         return self._json({"ok": True, "config": cfg})
 
     def _create_auth(self, body: dict):
@@ -1593,7 +1624,8 @@ class Handler(BaseHTTPRequestHandler):
         save_config(cfg)
         remember_recent_dir(cfg, directory)
         job = start_job("sync", username, password, directory, options)
-        MEDIA_CACHE["at"] = 0
+        with MEDIA_LOCK:
+            MEDIA_CACHE["at"] = 0
         return self._json({"ok": True, "job": job.public()}, 201)
 
     def _list_fs(self, raw_path: str):
@@ -1754,6 +1786,16 @@ class Handler(BaseHTTPRequestHandler):
             threading.Thread(target=callback, daemon=True).start()
 
     # -- binary media ---------------------------------------------------
+    def _not_modified(self, etag: str) -> bool:
+        validators = [value.strip().removeprefix("W/") for value in self.headers.get("If-None-Match", "").split(",")]
+        if etag not in validators and "*" not in validators:
+            return False
+        self.send_response(304)
+        self.send_header("ETag", etag)
+        self.send_header("Cache-Control", "private, no-cache")
+        self.end_headers()
+        return True
+
     def _serve_thumb(self, query: dict):
         rel = (query.get("path", [""])[0] or "").strip()
         try:
@@ -1766,20 +1808,15 @@ class Handler(BaseHTTPRequestHandler):
         thumb = get_thumbnail(target, width)
         if not thumb or not thumb.is_file():
             return self._error("无法生成缩略图", 415)
-        body = thumb.read_bytes()
-        etag = '"' + hashlib.sha1(body).hexdigest()[:20] + '"'
-        if self.headers.get("If-None-Match") == etag:
-            self.send_response(304)
-            self.send_header("ETag", etag)
-            self.send_header("Content-Length", "0")
-            self.end_headers()
+        etag = '"' + thumb.stem + '"'
+        if self._not_modified(etag):
             return
         self._send(
             200,
-            body,
+            thumb.read_bytes(),
             "image/jpeg",
             {
-                "Cache-Control": "public, max-age=86400",
+                "Cache-Control": "private, no-cache",
                 "ETag": etag,
             },
         )
@@ -1793,40 +1830,53 @@ class Handler(BaseHTTPRequestHandler):
         ctype = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
         if ext in (".heic", ".heif"):
             ctype = "image/heic"
-        size = target.stat().st_size
-        range_header = self.headers.get("Range")
-        start, end = 0, size - 1
-        status = 200
-        if range_header:
-            m = re.match(r"bytes=(\d*)-(\d*)", range_header.strip())
-            if m:
-                if m.group(1):
-                    start = int(m.group(1))
-                if m.group(2):
-                    if m.group(1):
-                        end = min(size - 1, int(m.group(2)))
-                    else:
-                        suffix = max(1, int(m.group(2)))
-                        start = max(0, size - suffix)
-                        end = size - 1
-                if start > end or start >= size:
-                    self.send_response(416)
-                    self.send_header("Content-Range", f"bytes */{size}")
-                    self.send_header("Content-Length", "0")
-                    self.end_headers()
-                    return
-                status = 206
-        length = end - start + 1
-        self.send_response(status)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(length))
-        self.send_header("Accept-Ranges", "bytes")
-        self.send_header("Cache-Control", "private, max-age=3600")
-        if status == 206:
-            self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
-        self.end_headers()
         try:
-            with open(target, "rb") as fh:
+            fh = open(target, "rb")
+        except FileNotFoundError:
+            return self._error("文件不存在", 404)
+        with fh:
+            st = os.fstat(fh.fileno())
+            size = st.st_size
+            seed = f"{target}|{st.st_mtime_ns}|{size}"
+            etag = '"' + hashlib.sha1(seed.encode("utf-8", "replace")).hexdigest() + '"'
+            if self._not_modified(etag):
+                return
+            start, end = 0, size - 1
+            status = 200
+            range_header = self.headers.get("Range", "")
+            if self.headers.get("If-Range", etag) == etag:
+                match = re.fullmatch(r"bytes=([0-9]*)-([0-9]*)", range_header.strip())
+                if match and any(match.groups()):
+                    first, last = (value.lstrip("0") or "0" for value in match.groups())
+                    digits = len(str(size))
+                    first_value = int(first) if len(first) <= digits else size
+                    last_value = int(last) if len(last) <= digits else size
+                    if match.group(1):
+                        start = first_value
+                        if match.group(2):
+                            end = min(size - 1, last_value)
+                    else:
+                        start = max(0, size - last_value)
+                    if start > end or start >= size:
+                        self.send_response(416)
+                        self.send_header("Content-Range", f"bytes */{size}")
+                        self.send_header("Content-Length", "0")
+                        self.send_header("Cache-Control", "private, no-cache")
+                        self.end_headers()
+                        return
+                    status = 206
+            length = end - start + 1
+            self.send_response(status)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(length))
+            self.send_header("X-Content-Type-Options", "nosniff")
+            self.send_header("Accept-Ranges", "bytes")
+            self.send_header("Cache-Control", "private, no-cache")
+            self.send_header("ETag", etag)
+            if status == 206:
+                self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+            self.end_headers()
+            try:
                 fh.seek(start)
                 remaining = length
                 while remaining > 0:
@@ -1835,8 +1885,8 @@ class Handler(BaseHTTPRequestHandler):
                         break
                     self.wfile.write(chunk)
                     remaining -= len(chunk)
-        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-            pass
+            except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
+                pass
 
 
 # ---------------------------------------------------------------------------
