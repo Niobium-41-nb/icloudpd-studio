@@ -1695,7 +1695,7 @@
     $("#settingsJobCount").textContent = String(state.jobs.length);
     $("#settingsMediaCount").textContent = number(state.stats?.library?.count || 0);
     $("#aboutEngineVersion").textContent = state.engine?.version || "—";
-    $("#aboutUiVersion").textContent = state.boot?.app?.version || "1.0.0";
+    $("#aboutUiVersion").textContent = state.boot?.app?.version || "—";
     $("#aboutPython").textContent = state.boot?.app?.python || "—";
     $$("#themeOptions button").forEach((btn) => {
       btn.classList.toggle("active", btn.dataset.themeChoice === state.themeChoice);

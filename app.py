@@ -50,7 +50,7 @@ except Exception:  # pragma: no cover - optional HEIF support
 
 
 APP_NAME = "iCloudPD Studio"
-APP_VERSION = "1.0.0"
+APP_VERSION = "1.0.1"
 
 
 class _NullStream:

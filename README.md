@@ -30,7 +30,7 @@
 
 不想装 Python 和 icloudpd？直接下载打包好的 Windows 版本：
 
-1. 从 [Releases](https://github.com/Niobium-41-nb/icloudpd-studio/releases) 下载 `iCloudPD-Studio-1.0.0-win64.zip`；
+1. 从 [Releases](https://github.com/Niobium-41-nb/icloudpd-studio/releases) 下载 `iCloudPD-Studio-1.0.1-win64.zip`；
 2. 解压到任意目录（不要在压缩包里直接双击运行）；
 3. 双击 `iCloudPD Studio.exe`。
 

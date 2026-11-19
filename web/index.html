@@ -1,0 +1,673 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>iCloudPD Studio — 把 iCloud 照片留在自己的硬盘上</title>
+  <meta name="description" content="iCloudPD Studio 给开源命令行工具 icloudpd 补上一层桌面界面：双击就能把 iCloud 照片与视频按原始画质增量备份到本地。在线体验同步流程，下载 Windows 免安装版。">
+  <meta name="theme-color" content="#12110e">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="iCloudPD Studio — 把 iCloud 照片留在自己的硬盘上">
+  <meta property="og:description" content="给 icloudpd 补一层桌面界面：原图直出、增量续传、双重认证、本地图库。在线体验同步流程，或下载 Windows 免安装版。">
+  <meta property="og:image" content="assets/cover.webp">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">跳到主要内容</a>
+
+<header class="site-header">
+  <div class="shell header-inner">
+    <a class="brand" href="#top" aria-label="iCloudPD Studio 首页">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 64 64" role="img"><g fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><circle cx="32" cy="32" r="20"/><path d="M32 12 25 26M52 24H38M44 50l-7-15M20 52l7-15M12 40h14M20 14l7 15"/></g><circle cx="32" cy="32" r="3.4" fill="currentColor"/></svg>
+      </span>
+      <span class="brand-text">
+        <strong>iCloudPD Studio</strong>
+        <small>LOCAL ARCHIVE STUDIO</small>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label="主要导航">
+      <a href="#demo">在线演示</a>
+      <a href="#why">为什么做</a>
+      <a href="#features">能力</a>
+      <a href="#how">原理</a>
+      <a href="#qoder">Qoder 构建</a>
+    </nav>
+
+    <div class="header-actions">
+      <span class="track-chip" title="2026 Qoder 高校创造力大赛赛道">LifeHack · 参赛作品</span>
+      <a class="btn btn-ghost btn-sm" href="#download">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        下载
+      </a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <a id="top"></a>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="shell hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow"><span class="dot"></span> 2026 Qoder 高校创造力大赛 · LifeHack 生活娱乐</p>
+        <h1>把 iCloud 照片，<br><em>留在自己的硬盘上。</em></h1>
+        <p class="lede">
+          iCloudPD Studio 给开源命令行工具 <code>icloudpd</code> 补上一层桌面界面。双击打开，选好范围，就能把 iCloud 里的照片与视频按原始画质增量备份到本地磁盘——没有云端中转，没有二次压缩。
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="#demo">
+            在线体验一次同步
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+          </a>
+          <a class="btn btn-ghost" href="#download">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+            Windows 免安装版
+          </a>
+        </div>
+        <ul class="hero-facts" aria-label="产品特征">
+          <li>原图直出</li>
+          <li>断点续传</li>
+          <li>只监听 127.0.0.1</li>
+          <li>无需 Python</li>
+        </ul>
+      </div>
+
+      <div class="hero-visual" aria-label="iCloudPD Studio 工作台界面截图">
+        <div class="photo-stack" aria-hidden="true">
+          <span class="paper p1"></span>
+          <span class="paper p2"></span>
+          <span class="paper p3"></span>
+        </div>
+        <figure class="device-frame">
+          <div class="device-bar" aria-hidden="true">
+            <i></i><i></i><i></i>
+            <span>iCloudPD Studio · 本地归档工作室</span>
+          </div>
+          <img src="assets/dashboard.webp" width="1440" height="940" alt="iCloudPD Studio 工作台：本地归档统计、最近任务与存储位置" fetchpriority="high">
+        </figure>
+        <div class="float-card float-engine">
+          <span class="pulse" aria-hidden="true"></span>
+          <div><small>引擎就绪</small><strong>icloudpd v1.32.3</strong></div>
+        </div>
+        <div class="float-card float-archive">
+          <small>本地归档</small>
+          <strong>6 <span>个文件</span> · 1.6 MB</strong>
+          <em>增量同步，跳过已存在</em>
+        </div>
+        <p class="visual-note">界面截图使用演示数据，不含真实账户信息。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive demo -->
+  <section class="section demo-section" id="demo">
+    <div class="shell">
+      <div class="section-head split">
+        <div>
+          <p class="eyebrow"><span class="dot"></span> TRY IT</p>
+          <h2>先在这里跑一次，<br>不用 Apple ID。</h2>
+        </div>
+        <p class="section-lede">
+          浏览器里的演示复刻了同一套配置逻辑：每个选项都会实时映射为 <code>icloudpd</code> 命令。它不连接 iCloud，也不会上传任何内容；真正的下载由你本机的引擎完成。
+        </p>
+      </div>
+
+      <div class="demo-shell" data-demo>
+        <div class="demo-topbar">
+          <div class="win-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+          <p>iCloudPD Studio <span>/</span> 同步下载</p>
+          <span class="demo-badge"><span class="pulse" aria-hidden="true"></span> 演示模式 · 数据不离开此页面</span>
+        </div>
+
+        <div class="demo-body">
+          <form class="demo-form" id="sync-form" autocomplete="off">
+            <div class="form-step">
+              <div class="step-head"><span class="step-no">01</span><div><h3>账户与连接</h3><p>真实应用会复用 ~/.pyicloud 里已有的会话。</p></div></div>
+              <label class="field">
+                <span>Apple ID</span>
+                <input type="text" id="account" name="account" placeholder="name@example.com" inputmode="email" spellcheck="false">
+                <small>演示中不会校验账户，也不会发起登录。</small>
+              </label>
+              <div class="field">
+                <span>iCloud 区域</span>
+                <div class="segmented" role="group" aria-label="iCloud 区域">
+                  <button type="button" class="seg is-active" data-region="com" aria-pressed="true">全球（.com）</button>
+                  <button type="button" class="seg" data-region="cn" aria-pressed="false">中国大陆（.cn）</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-step">
+              <div class="step-head"><span class="step-no">02</span><div><h3>要同步什么</h3><p>按时间、数量或相册筛选，先小范围试跑。</p></div></div>
+
+              <div class="media-row" role="group" aria-label="媒体类型">
+                <label class="toggle-card is-on">
+                  <input type="checkbox" id="media-photo" checked>
+                  <span class="toggle-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg>
+                  </span>
+                  <span><strong>照片</strong><small>JPEG · HEIC · RAW</small></span>
+                  <span class="switch" aria-hidden="true"></span>
+                </label>
+                <label class="toggle-card is-on">
+                  <input type="checkbox" id="media-video" checked>
+                  <span class="toggle-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="5" width="13" height="14" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg>
+                  </span>
+                  <span><strong>视频</strong><small>MOV · MP4 · HEVC</small></span>
+                  <span class="switch" aria-hidden="true"></span>
+                </label>
+                <label class="toggle-card is-on">
+                  <input type="checkbox" id="media-live" checked>
+                  <span class="toggle-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M5.6 5.6a9 9 0 0 0 0 12.8M18.4 5.6a9 9 0 0 1 0 12.8M8.5 8.5a5 5 0 0 0 0 7M15.5 8.5a5 5 0 0 1 0 7"/></svg>
+                  </span>
+                  <span><strong>Live Photo</strong><small>照片与视频片段</small></span>
+                  <span class="switch" aria-hidden="true"></span>
+                </label>
+              </div>
+
+              <fieldset class="scope-field">
+                <legend>同步范围</legend>
+                <div class="scope-grid">
+                  <label class="scope-card">
+                    <input type="radio" name="scope" value="all">
+                    <span class="scope-inner"><strong>全部内容</strong><small>完整备份整个图库</small></span>
+                  </label>
+                  <label class="scope-card is-active">
+                    <input type="radio" name="scope" value="recent" checked>
+                    <span class="scope-inner"><strong>最近若干张</strong><small>按时间倒序取最新</small></span>
+                  </label>
+                  <label class="scope-card">
+                    <input type="radio" name="scope" value="range">
+                    <span class="scope-inner"><strong>日期范围</strong><small>指定起止日期</small></span>
+                  </label>
+                  <label class="scope-card">
+                    <input type="radio" name="scope" value="album">
+                    <span class="scope-inner"><strong>指定相册</strong><small>只取选中的相册</small></span>
+                  </label>
+                </div>
+
+                <div class="scope-extra" data-extra="recent">
+                  <label class="inline-field"><span>最近</span><input type="number" id="recent-count" min="1" max="50000" value="500"><span>张</span></label>
+                </div>
+                <div class="scope-extra" data-extra="range" hidden>
+                  <label class="inline-field"><span>从</span><input type="date" id="date-from" value="2026-01-01"><span>到</span><input type="date" id="date-to" value="2026-06-30"></label>
+                </div>
+                <div class="scope-extra" data-extra="album" hidden>
+                  <label class="inline-field"><span>相册名</span><input type="text" id="album-name" value="旅行" maxlength="40"></label>
+                </div>
+              </fieldset>
+            </div>
+
+            <div class="form-step">
+              <div class="step-head"><span class="step-no">03</span><div><h3>保存位置</h3><p>真实应用可直接浏览 C:/D:/E: 等任意磁盘。</p></div></div>
+              <label class="field">
+                <span>下载目录</span>
+                <input type="text" id="directory" value="D:\iCloudPD-Demo\Photos" spellcheck="false">
+                <small>目录结构、尺寸、XMP、EXIF 与去重策略在真实应用中可进一步配置。</small>
+              </label>
+              <label class="check-row">
+                <input type="checkbox" id="preview-only">
+                <span class="check-box" aria-hidden="true"></span>
+                <span><strong>仅预览待下载清单</strong><small>对应 <code>--dry-run</code>，不写入任何文件。</small></span>
+              </label>
+            </div>
+          </form>
+
+          <aside class="run-summary" aria-label="运行摘要">
+            <div class="summary-top">
+              <p class="mono-label">RUN SUMMARY</p>
+              <h3>运行摘要</h3>
+            </div>
+            <dl class="summary-list">
+              <div><dt>账户</dt><dd id="sum-account">name@example.com</dd></div>
+              <div><dt>区域</dt><dd id="sum-region">全球（.com）</dd></div>
+              <div><dt>范围</dt><dd id="sum-scope">最近 500 张</dd></div>
+              <div><dt>媒体</dt><dd id="sum-media">照片 · 视频 · Live Photo</dd></div>
+              <div><dt>保存到</dt><dd id="sum-dir" class="ellipsis">D:\iCloudPD-Demo\Photos</dd></div>
+              <div><dt>模式</dt><dd id="sum-mode">正式同步</dd></div>
+            </dl>
+
+            <div class="command-block">
+              <div class="command-head">
+                <span>命令预览</span>
+                <button type="button" class="copy-btn" id="copy-command">复制</button>
+              </div>
+              <pre id="command-preview"><code></code></pre>
+            </div>
+
+            <button type="button" class="btn btn-primary btn-block" id="start-sync">
+              开始模拟同步
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+            </button>
+            <button type="button" class="text-btn" id="reset-demo" hidden>重置演示</button>
+            <p class="summary-hint">密码只会在本机内存中传给子进程。演示不会收集任何输入。</p>
+          </aside>
+        </div>
+
+        <div class="terminal" id="terminal">
+          <div class="terminal-head">
+            <span class="terminal-title"><span class="pulse" aria-hidden="true"></span> 任务输出</span>
+            <span class="terminal-status" id="terminal-status">等待开始</span>
+          </div>
+          <pre class="terminal-log" id="log" role="log" aria-live="polite" aria-label="模拟任务日志"><span class="ln muted">$ icloudpd --version</span>
+<span class="ln ok">version: 1.32.3</span>
+<span class="ln muted">引擎就绪。配置左侧选项，然后开始模拟同步。</span></pre>
+
+          <div class="mfa-panel" id="mfa-panel" hidden>
+            <div>
+              <strong>需要双重认证</strong>
+              <p>你的 Apple ID 正在新设备上登录。输入验证码继续（演示：任意 6 位数字）。</p>
+            </div>
+            <div class="mfa-actions">
+              <input type="text" id="mfa-code" inputmode="numeric" maxlength="6" placeholder="000000" aria-label="双重认证验证码">
+              <button type="button" class="btn btn-primary btn-sm" id="mfa-submit">提交验证码</button>
+              <button type="button" class="text-btn" id="mfa-fill">填入 123456</button>
+            </div>
+          </div>
+
+          <div class="progress-row">
+            <div class="progress" role="progressbar" aria-label="模拟同步进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progress">
+              <span id="progress-bar"></span>
+            </div>
+            <span id="progress-label">0%</span>
+          </div>
+
+          <div class="counters">
+            <span><small>已下载</small><strong id="count-done">0</strong></span>
+            <span><small>已跳过</small><strong id="count-skip">0</strong></span>
+            <span><small>错误</small><strong id="count-error">0</strong></span>
+            <span><small>耗时</small><strong id="count-time">00:00</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Result gallery -->
+      <div class="result-gallery" id="result-gallery" hidden>
+        <div class="gallery-head">
+          <div>
+            <p class="mono-label">CONTACT SHEET</p>
+            <h3>归档结果 <span id="result-total">6 个文件</span></h3>
+            <p class="gallery-sub">演示素材，用于展示真实应用里的本地图库；不是任何账户的真实照片。</p>
+          </div>
+          <div class="gallery-tools">
+            <label class="search-box">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input type="search" id="gallery-search" placeholder="搜索文件名…" aria-label="搜索文件名">
+            </label>
+            <div class="filter-chips" role="group" aria-label="媒体筛选">
+              <button type="button" class="chip is-active" data-filter="all">全部</button>
+              <button type="button" class="chip" data-filter="photo">照片</button>
+              <button type="button" class="chip" data-filter="video">视频</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="gallery-grid" id="gallery-grid">
+          <button type="button" class="photo-card" data-type="photo" data-name="IMG_0004.JPG" data-src="assets/demo-2.webp" data-size="345.7 KB">
+            <span class="photo-img"><img src="assets/demo-2.webp" width="265" height="290" alt="夜晚下过雨的城市街道" loading="lazy"></span>
+            <span class="photo-meta"><strong>IMG_0004.JPG</strong><small>照片 · 345.7 KB</small></span>
+          </button>
+          <button type="button" class="photo-card" data-type="photo" data-name="IMG_0002.JPG" data-src="assets/demo-3.webp" data-size="301.3 KB">
+            <span class="photo-img"><img src="assets/demo-3.webp" width="273" height="290" alt="窗台上的橘猫" loading="lazy"></span>
+            <span class="photo-meta"><strong>IMG_0002.JPG</strong><small>照片 · 301.3 KB</small></span>
+          </button>
+          <button type="button" class="photo-card" data-type="photo" data-name="IMG_0001.JPG" data-src="assets/demo-4.webp" data-size="286.9 KB">
+            <span class="photo-img"><img src="assets/demo-4.webp" width="265" height="268" alt="云层下的绿色山谷" loading="lazy"></span>
+            <span class="photo-meta"><strong>IMG_0001.JPG</strong><small>照片 · 286.9 KB</small></span>
+          </button>
+          <button type="button" class="photo-card" data-type="photo" data-name="IMG_0003.JPG" data-src="assets/demo-5.webp" data-size="318.2 KB">
+            <span class="photo-img"><img src="assets/demo-5.webp" width="265" height="268" alt="桌上的拿铁与蛋糕" loading="lazy"></span>
+            <span class="photo-meta"><strong>IMG_0003.JPG</strong><small>照片 · 318.2 KB</small></span>
+          </button>
+          <button type="button" class="photo-card" data-type="photo" data-name="IMG_0005.JPG" data-src="assets/demo-6.webp" data-size="262.4 KB">
+            <span class="photo-img"><img src="assets/demo-6.webp" width="273" height="268" alt="海边日落与两个人的剪影" loading="lazy"></span>
+            <span class="photo-meta"><strong>IMG_0005.JPG</strong><small>照片 · 262.4 KB</small></span>
+          </button>
+          <button type="button" class="photo-card video-card" data-type="video" data-name="IMG_0007.MOV" data-size="12.8 MB">
+            <span class="photo-img video-thumb">
+              <span class="play-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span>
+              <span class="video-lines" aria-hidden="true"></span>
+            </span>
+            <span class="photo-meta"><strong>IMG_0007.MOV</strong><small>视频 · 12.8 MB</small></span>
+          </button>
+        </div>
+        <p class="gallery-empty" id="gallery-empty" hidden>没有匹配的文件。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Why -->
+  <section class="section why-section" id="why">
+    <div class="shell">
+      <div class="section-head">
+        <p class="eyebrow"><span class="dot"></span> WHY</p>
+        <h2>iCloud 是租来的空间，<br>照片应该是你的。</h2>
+      </div>
+
+      <div class="problem-list">
+        <article class="problem">
+          <span class="problem-no">01</span>
+          <div>
+            <h3>网页版只能一张张点</h3>
+            <p>原图下载、批量选择与断点续传都受限，中途断了往往要重新来。iCloudPD Studio 直接调用 icloudpd，按目录结构整批拉取。</p>
+          </div>
+        </article>
+        <article class="problem">
+          <span class="problem-no">02</span>
+          <div>
+            <h3>几十个参数散在文档里</h3>
+            <p>同步范围、相册、媒体类型、目录结构、尺寸与去重策略，全部变成结构化表单；右侧实时生成命令，先预览再执行。</p>
+          </div>
+        </article>
+        <article class="problem">
+          <span class="problem-no">03</span>
+          <div>
+            <h3>第三方备份要先把原件传上去</h3>
+            <p>这个应用只监听 127.0.0.1，没有账号系统、遥测或云端中转。照片只从 iCloud 走到你的磁盘，中间没有第二个服务器。</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section features-section" id="features">
+    <div class="shell">
+      <div class="section-head split">
+        <div>
+          <p class="eyebrow"><span class="dot"></span> FEATURES</p>
+          <h2>命令行能做的事，<br>现在可以点着做。</h2>
+        </div>
+        <p class="section-lede">界面不重写任何下载逻辑。它只负责拼参数、起进程、读输出、接住验证码——icloudpd 仍是唯一的执行者。</p>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature">
+          <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="10" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><path d="M12 14v2"/></svg></span>
+          <h3>双重认证接力</h3>
+          <p>识别 icloudpd 的密码与验证码提示，把输入框推到任务面板；填完写回子进程 stdin，识别不到还有手动输入兜底。</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg></span>
+          <h3>实时任务日志</h3>
+          <p>stdout 实时接入，已下载、已跳过、错误三路计数与耗时同时显示；长任务不再是一行行滚动的黑屏。</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="m4 18 5-5 4 4 3-3 4 4"/></svg></span>
+          <h3>本地照片图库</h3>
+          <p>扫描下载目录生成缩略图，HEIC 由 pillow-heif 解码，视频首帧交给 ffmpeg；支持搜索、照片/视频筛选与灯箱预览。</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h18"/><circle cx="7" cy="7" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="17" cy="17" r="1.6"/></svg></span>
+          <h3>任意磁盘目录</h3>
+          <p>自己实现目录浏览接口，直接列出 C:/D:/E: 所有磁盘，从根目录开始逐级进入，不把备份塞进系统盘。</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 13.6-5.7M20 12a8 8 0 0 1-13.6 5.7"/><path d="M17 3v4h-4M7 21v-4h4"/></svg></span>
+          <h3>会话复用</h3>
+          <p>读取 ~/.pyicloud 里已有的 cookie 与 session，展示会话状态；有效时可以留空密码直接开始同步。</p>
+        </article>
+        <article class="feature">
+          <span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+          <h3>破坏性操作二次确认</h3>
+          <p>下载后删除、清空「最近删除」、只保留最近 N 天，这三类不可逆操作一律弹确认框，不让你手滑。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="updates" aria-labelledby="updates-title">
+    <div class="shell">
+      <div class="section-head split">
+        <div>
+          <p class="eyebrow"><span class="dot"></span> 2026.11.19 · v1.0.1 更新</p>
+          <h2 id="updates-title">图库更大，<br>浏览更轻。</h2>
+        </div>
+        <p class="section-lede">这轮优化已包含在 v1.0.1 免安装包中，作用于本机图库与媒体预览，不改变照片只在本机保存的边界。在线体验仍是模拟演示；下载最新版即可在自己的电脑上使用这些改进。</p>
+      </div>
+      <div class="how-notes">
+        <article class="note-card">
+          <span class="note-label">完整统计</span>
+          <h3>图库再大，也不漏算</h3>
+          <p>扫描完整下载目录，统计全部媒体的数量与体积；浏览索引保留最新 30,000 个文件，不限制实际备份数量。短时缓存减少重复扫描，手动刷新仍会重新读取目录。</p>
+        </article>
+        <article class="note-card">
+          <span class="note-label">缩略图提速</span>
+          <h3>同一张图，不重复生成</h3>
+          <p>并发请求复用同一份缩略图，大尺寸 JPEG 在解码时先降采样；保留照片方向与透明背景处理，减少预览时的等待和重复计算。</p>
+        </article>
+        <article class="note-card">
+          <span class="note-label">媒体预览</span>
+          <h3>文件更新，预览跟着更新</h3>
+          <p>文件变化后重新校验浏览器缓存，避免一直显示旧图；修正视频分段读取与拖动进度的边界处理。扫描、缩略图和媒体接口均已补充回归测试。</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section how-section" id="how">
+    <div class="shell">
+      <div class="section-head">
+        <p class="eyebrow"><span class="dot"></span> HOW IT WORKS</p>
+        <h2>一层界面，一条命令，<br>一个本地进程。</h2>
+      </div>
+
+      <div class="flow" role="img" aria-label="数据流：WebView2 窗口到本地服务，再到 icloudpd 子进程，最后写入本地磁盘">
+        <div class="flow-node">
+          <span class="flow-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="3"/><path d="M8 21h8M12 18v3"/></svg></span>
+          <strong>WebView2 窗口</strong>
+          <small>原生窗口，不占用浏览器标签页</small>
+        </div>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <div class="flow-node">
+          <span class="flow-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="6" rx="2"/><rect x="3" y="13" width="18" height="6" rx="2"/><path d="M7 8h.01M7 16h.01"/></svg></span>
+          <strong>127.0.0.1 本地服务</strong>
+          <small>Python ThreadingHTTPServer，仅回环</small>
+        </div>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <div class="flow-node">
+          <span class="flow-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 8 7-4 7 4v8l-7 4-7-4z"/><path d="m5 8 7 4 7-4M12 12v8"/></svg></span>
+          <strong>icloudpd 子进程</strong>
+          <small>拼参数、读 stdout、写 stdin</small>
+        </div>
+        <span class="flow-arrow" aria-hidden="true">→</span>
+        <div class="flow-node">
+          <span class="flow-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18M8 4v6"/></svg></span>
+          <strong>你的磁盘</strong>
+          <small>原图与视频，按目录结构落盘</small>
+        </div>
+      </div>
+
+      <div class="how-notes">
+        <div class="note-card">
+          <span class="note-label">DATA BOUNDARY</span>
+          <h3>照片不经过任何服务器</h3>
+          <p>界面是本地页面，API 只监听 127.0.0.1；icloudpd 直接连接 iCloud 下载到目标目录。没有账号系统、遥测或云端中转。</p>
+        </div>
+        <div class="note-card">
+          <span class="note-label">PROCESS HYGIENE</span>
+          <h3>关窗即收尾</h3>
+          <p>关闭窗口会自动停止由桌面版启动的本地服务与任务；清理进程树时连子进程一起收掉，避免遗留进程继续占用会话。</p>
+        </div>
+        <div class="note-card">
+          <span class="note-label">CREDENTIALS</span>
+          <h3>不假装比实际更安全</h3>
+          <p>密码不写配置、不写日志，只在启动子进程时留在内存并作为参数传递。介意的话，先通过「登录 / 重验」保存会话，之后留空密码运行。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Steps -->
+  <section class="section steps-section" id="steps">
+    <div class="shell">
+      <div class="section-head split">
+        <div>
+          <p class="eyebrow"><span class="dot"></span> GET STARTED</p>
+          <h2>五步，<br>把照片拿回来。</h2>
+        </div>
+        <p class="section-lede">不需要 Python，不需要单独安装 icloudpd。首次运行会在程序旁边生成 data/ 目录，保存配置、日志与缩略图缓存。</p>
+      </div>
+
+      <ol class="steps">
+        <li><span class="step-num">01</span><div><h3>下载并解压</h3><p>下载 47.7 MiB 的 Windows 免安装包，解压到任意目录。不要在压缩包里直接双击运行。</p></div></li>
+        <li><span class="step-num">02</span><div><h3>双击 iCloudPD Studio.exe</h3><p>引擎已随包分发在同一个文件夹里。首次打开会在程序旁边生成 data/ 目录。</p></div></li>
+        <li><span class="step-num">03</span><div><h3>登录 / 重验</h3><p>输入 Apple ID，按任务面板提示完成双重认证；会话保存后，后续同步通常不再需要密码。</p></div></li>
+        <li><span class="step-num">04</span><div><h3>选范围，先预览</h3><p>建议先勾选「仅预览待下载清单」，确认范围与右侧生成的命令，再正式同步。</p></div></li>
+        <li><span class="step-num">05</span><div><h3>开始同步，去图库验收</h3><p>任务记录看实时日志；照片图库浏览已经落地的文件。中断后重跑同一配置即可增量续传。</p></div></li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- Qoder -->
+  <section class="section qoder-section" id="qoder">
+    <div class="shell">
+      <div class="section-head split">
+        <div>
+          <p class="eyebrow"><span class="dot"></span> BUILT WITH QODER</p>
+          <h2>这次参赛，用 Qoder<br>产品被搬进了浏览器。</h2>
+        </div>
+        <p class="section-lede">
+          桌面应用本体是赛前完成并已开源的实现；本次参加 2026 Qoder 高校创造力大赛，用 Qoder 完成了在线体验站、演示引擎与 Qoder Sites 部署。
+        </p>
+      </div>
+
+      <div class="qoder-layout">
+        <ol class="timeline">
+          <li><span class="time">10-21</span><div><h3>桌面版跑通</h3><p>WebView2 窗口 + 本地服务 + 任务桥接，双重认证提示接入任务面板。</p></div></li>
+          <li><span class="time">10-22</span><div><h3>免安装打包</h3><p>双 exe 架构：窗口壳与独立 icloudpd 引擎；发布 v1.0.0，zip 61.9 MB。</p></div></li>
+          <li><span class="time">11-19</span><div><h3>在线体验站</h3><p>用 Qoder 复刻同步配置流程、实时命令预览、模拟任务与本地图库，浏览器打开即可体验。</p></div></li>
+          <li><span class="time">11-19</span><div><h3>部署 Qoder Sites</h3><p>静态站点公网发布，评委无需安装即可访问；桌面版通过 GitHub Release 下载。</p></div></li>
+          <li><span class="time">11-19</span><div><h3>图库性能与预览优化</h3><p>用 Qoder 优化完整目录统计、缩略图并发与媒体缓存，修正视频分段读取；新增 48 项回归测试，本机运行 46 项通过、2 项因符号链接权限跳过。改动已合并至源码主分支，并随 v1.0.1 免安装包发布。</p></div></li>
+        </ol>
+
+        <div class="shot-stack">
+          <figure><img src="assets/download.webp" width="1440" height="940" alt="同步下载配置页" loading="lazy"><figcaption>同步下载：选项映射为命令</figcaption></figure>
+          <figure><img src="assets/gallery.webp" width="1440" height="940" alt="照片图库页面" loading="lazy"><figcaption>照片图库：本地缩略图与筛选</figcaption></figure>
+          <figure><img src="assets/settings.webp" width="1440" height="940" alt="设置页面" loading="lazy"><figcaption>设置：存储、会话与引擎检测</figcaption></figure>
+        </div>
+      </div>
+
+      <p class="honest-note">
+        说明：为符合大赛对开发过程的要求，作品帖会附上本次 Qoder 会话截图与本轮改动清单；桌面应用本体与提交历史在开源仓库中可查。
+      </p>
+    </div>
+  </section>
+
+  <!-- Download -->
+  <section class="section download-section" id="download">
+    <div class="shell">
+      <div class="download-card">
+        <div class="download-main">
+          <p class="eyebrow"><span class="dot"></span> DOWNLOAD</p>
+          <h2>带回去，<br>在自己的电脑上跑。</h2>
+          <p class="section-lede">Windows x64 免安装版。解压后双击即可打开，引擎与 HEIC 解码库已随包分发。</p>
+          <div class="download-actions">
+            <a class="btn btn-primary" href="https://github.com/Niobium-41-nb/icloudpd-studio/releases/download/v1.0.1/iCloudPD-Studio-1.0.1-win64.zip" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+              下载 iCloudPD Studio 1.0.1
+            </a>
+            <a class="btn btn-ghost" href="https://github.com/Niobium-41-nb/icloudpd-studio" target="_blank" rel="noopener">查看源代码</a>
+          </div>
+          <p class="download-note">需要自己的 Apple ID 才能真实同步；没有账号也可以完整浏览界面、配置参数与本地图库。</p>
+          <p class="download-note"><strong>版本说明：</strong>v1.0.1 已包含完整图库统计、缩略图并发复用与媒体预览修复，无需配置 Python 环境；<a class="text-btn" href="#updates">查看本次更新说明</a>。</p>
+        </div>
+
+        <div class="download-meta">
+          <dl>
+            <div><dt>版本</dt><dd>1.0.1</dd></div>
+            <div><dt>平台</dt><dd>Windows x64</dd></div>
+            <div><dt>大小</dt><dd>47.7 MiB</dd></div>
+            <div><dt>引擎</dt><dd>icloudpd 1.32.3</dd></div>
+            <div><dt>许可</dt><dd>MIT</dd></div>
+            <div><dt>依赖</dt><dd>WebView2 Runtime</dd></div>
+          </dl>
+          <details class="checksum">
+            <summary>SHA-256 校验</summary>
+            <code>da40fc41a8921d3519558cfc4f8c71ca04eae77403d4cb9397bb20e5a7e4da01</code>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section faq-section" id="faq">
+    <div class="shell">
+      <div class="section-head">
+        <p class="eyebrow"><span class="dot"></span> FAQ</p>
+        <h2>先把疑问放下。</h2>
+      </div>
+      <div class="faq-list">
+        <details>
+          <summary>没有 Apple ID 能体验吗？</summary>
+          <p>在线演示不需要账户，所有选项都在浏览器里模拟。桌面版的界面、配置与本地图库也可以直接浏览；只有真实同步需要你自己的 Apple ID，这是 icloudpd 登录账户的前提。</p>
+        </details>
+        <details>
+          <summary>照片会不会经过第三方服务器？</summary>
+          <p>不会。本地服务只监听 127.0.0.1，没有账号系统、遥测或云端中转。下载由你本机的 icloudpd 直接连接 iCloud 完成，文件直接写入目标磁盘。</p>
+        </details>
+        <details>
+          <summary>和 iCloud 网页版有什么区别？</summary>
+          <p>网页版偏浏览与少量下载；这里按目录结构整批拉取原图，支持增量、断点续传、双重认证会话、实时日志和本地图库，适合几万张照片的归档。</p>
+        </details>
+        <details>
+          <summary>密码安全吗？</summary>
+          <p>密码不写配置、不写日志，只在启动 icloudpd 时留在内存，并作为子进程参数传递。本机其他有权限的进程在任务运行期间可能看到该进程参数；介意的话，先通过「登录 / 重验」保存会话，之后留空密码运行。</p>
+        </details>
+        <details>
+          <summary>ADP（高级数据保护）账户能用吗？</summary>
+          <p>不能。这是 icloudpd 上游的限制，不是界面加的。ADP 账户无法通过 icloudpd 登录。</p>
+        </details>
+        <details>
+          <summary>收费吗？</summary>
+          <p>应用开源且免费（MIT）。iCloud 存储费用仍由 Apple 收取；这个工具只负责把已经在 iCloud 里的内容备份到你自己的磁盘。</p>
+        </details>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="shell footer-inner">
+    <div class="footer-brand">
+      <span class="brand-mark small" aria-hidden="true">
+        <svg viewBox="0 0 64 64"><g fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"><circle cx="32" cy="32" r="20"/><path d="M32 12 25 26M52 24H38M44 50l-7-15M20 52l7-15M12 40h14M20 14l7 15"/></g><circle cx="32" cy="32" r="3.4" fill="currentColor"/></svg>
+      </span>
+      <div>
+        <strong>iCloudPD Studio</strong>
+        <p>Made for local archives. 照片留在你的磁盘上。</p>
+      </div>
+    </div>
+    <div class="footer-links">
+      <a href="https://github.com/Niobium-41-nb/icloudpd-studio" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://icloud-photos-downloader.github.io/icloud_photos_downloader/" target="_blank" rel="noopener">icloudpd 文档</a>
+      <a href="#demo">在线演示</a>
+      <a href="#download">下载</a>
+    </div>
+    <p class="footer-legal">
+      2026 Qoder 高校创造力大赛 · LifeHack 生活娱乐赛道参赛作品。非官方项目，与 Apple 及 icloudpd 上游项目无隶属关系；iCloud 是 Apple Inc. 的商标。页面截图使用演示数据。
+    </p>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="照片预览" hidden>
+  <button type="button" class="lightbox-close" id="lightbox-close" aria-label="关闭预览">×</button>
+  <button type="button" class="lightbox-nav prev" id="lightbox-prev" aria-label="上一张">‹</button>
+  <figure>
+    <img id="lightbox-img" alt="">
+    <figcaption id="lightbox-caption"></figcaption>
+  </figure>
+  <button type="button" class="lightbox-nav next" id="lightbox-next" aria-label="下一张">›</button>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
